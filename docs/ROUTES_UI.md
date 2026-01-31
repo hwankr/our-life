@@ -4,8 +4,7 @@
 
 ```
 /                           → 랜딩/로그인
-/app                        → Active Period로 리다이렉트
-/periods/new                → 새 기간 생성
+/app                        → 메인 대시보드 (기간 목록, 생성)
 /periods/[periodId]         → 기간 요약 (메인)
 /periods/[periodId]/users/[userId]          → 개인 상세
 /periods/[periodId]/users/[userId]/logs/[date]  → 일일 기록

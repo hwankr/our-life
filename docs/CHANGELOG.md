@@ -24,6 +24,9 @@
 - 기술 스택: Supabase + Next.js (App Router)
 - 단일 Goal 테이블 + optional fields 방식
 - LIMIT 중복 정책: 하루에 여러 번 체크 허용
+- 메인 대시보드 UI 개편 (기간 목록 뷰, 모달 생성)
+    - `/app` 리다이렉트 제거 및 대시보드화
+    - `/periods/new` 페이지 삭제 및 모달로 통합
 
 ---
 

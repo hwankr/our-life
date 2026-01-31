@@ -21,7 +21,7 @@
 | 프로젝트 초기화 | ✅ 완료 |
 | DB 스키마 생성 | ✅ 코드 완료 (사용자 Supabase 실행 필요) |
 | 인증 구현 | ✅ 완료 (Google OAuth) |
-| Period 기능 | ✅ 완료 |
+| Period 기능 | ✅ 완료 (대시보드 통합/모달 생성) |
 | Goal 기능 | ✅ 완료 (3가지 타입) |
 | DailyLog 기능 | ✅ 완료 |
 | UI 완성 | ✅ 기본 완료 |
@@ -29,15 +29,14 @@
 
 ---
 
-## 라우트 구조 (9개)
+## 라우트 구조 (8개)
 
 ```
 /                     → 랜딩/로그인
 /auth/login           → Google OAuth
 /auth/callback        → OAuth 콜백
 /auth/auth-code-error → 인증 오류
-/app                  → Active Period 리다이렉트
-/periods/new          → 새 기간 생성
+/app                  → 메인 대시보드 (기간 목록, 생성)
 /periods/[periodId]   → 기간 요약
 /periods/[periodId]/users/[userId]           → 개인 상세
 /periods/[periodId]/users/[userId]/logs/[date] → 일일 기록
