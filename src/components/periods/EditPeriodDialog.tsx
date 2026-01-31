@@ -98,6 +98,29 @@ export function EditPeriodDialog({ period, trigger }: EditPeriodDialogProps) {
     }
   };
 
+  const handleDelete = async () => {
+     if (!confirm("정말 이 기간을 삭제하시겠습니까?\n\n포함된 모든 목표와 기록이 영구적으로 삭제됩니다. 이 작업은 되돌릴 수 없습니다.")) {
+        return;
+     }
+     
+     setIsLoading(true);
+     try {
+        const supabase = createClient();
+        const { error } = await supabase.from('periods').delete().eq('id', period.id);
+        
+        if (error) throw error;
+        
+        toast.success("기간이 삭제되었습니다.");
+        setOpen(false);
+        router.push('/app'); 
+        router.refresh();
+     } catch (error) {
+        console.error("기간 삭제 오류:", error);
+        toast.error("기간 삭제에 실패했습니다.");
+        setIsLoading(false);
+     }
+  };
+
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
@@ -163,11 +186,16 @@ export function EditPeriodDialog({ period, trigger }: EditPeriodDialogProps) {
             </p>
           </div>
 
-          <div className="flex justify-end gap-2 pt-2">
-            <Button type="button" variant="outline" onClick={() => setOpen(false)}>취소</Button>
-            <Button type="submit" disabled={isLoading}>
-              {isLoading ? "저장 중..." : "저장하기"}
+          <div className="flex justify-between items-center pt-4">
+            <Button type="button" variant="destructive" size="sm" onClick={handleDelete} disabled={isLoading}>
+               삭제하기
             </Button>
+            <div className="flex gap-2">
+               <Button type="button" variant="outline" onClick={() => setOpen(false)}>취소</Button>
+               <Button type="submit" disabled={isLoading}>
+                 {isLoading ? "저장 중..." : "저장하기"}
+               </Button>
+            </div>
           </div>
         </form>
       </DialogContent>
