@@ -1,15 +1,17 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect, notFound } from "next/navigation";
 import Link from "next/link";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Progress } from "@/components/ui/progress";
-import { Badge } from "@/components/ui/badge";
-import { formatDateKorean, getTodayString, getMonthsBetween } from "@/lib/date-utils";
+import { formatDateKorean, getTodayString } from "@/lib/date-utils";
 import { Goal, DailyLog } from "@/types";
 import { GoalCard } from "@/components/goal-card";
 import { AddGoalDialog } from "@/components/add-goal-dialog";
+import { ThemeToggle } from "@/components/theme-toggle";
+import { UserMenu } from "@/components/user-menu";
+import { FadeIn, StaggerContainer, StaggerItem } from "@/components/ui/motion-layout";
+import { ArrowLeft, PenLine, History, Sparkles } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 interface UserDetailPageProps {
   params: Promise<{ periodId: string; userId: string }>;
@@ -71,110 +73,147 @@ export default async function UserDetailPage({ params }: UserDetailPageProps) {
   const isOwnPage = authUser.id === userId;
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-zinc-50 to-zinc-100 dark:from-zinc-900 dark:to-zinc-950">
+    <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950 selection:bg-rose-500/20 selection:text-rose-600">
       {/* 헤더 */}
-      <header className="sticky top-0 z-10 bg-white/80 dark:bg-zinc-900/80 backdrop-blur border-b">
-        <div className="container mx-auto px-4 py-4">
+      <header className="sticky top-0 z-50 w-full border-b border-zinc-200/50 dark:border-zinc-800/50 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md">
+        <div className="container mx-auto px-4 h-16 max-w-5xl flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <Link href={`/periods/${periodId}`} className="text-zinc-500 hover:text-zinc-700">
-              ← 돌아가기
-            </Link>
-            <div className="flex-1" />
-            <Avatar className="h-10 w-10">
-              <AvatarImage src={targetUser.avatar_url || undefined} />
-              <AvatarFallback>{targetUser.name?.charAt(0) || '?'}</AvatarFallback>
-            </Avatar>
-            <div>
-              <h1 className="font-bold">{targetUser.name}</h1>
-              <p className="text-xs text-zinc-500">{period.title}</p>
-            </div>
+             <Link href={`/periods/${periodId}`} className="text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-200 transition-colors">
+               <ArrowLeft className="h-5 w-5" />
+             </Link>
+             <div className="flex items-center gap-3">
+               <Avatar className="h-8 w-8 border border-zinc-200 dark:border-zinc-800">
+                  <AvatarImage src={targetUser.avatar_url || undefined} />
+                  <AvatarFallback>{targetUser.name?.charAt(0) || '?'}</AvatarFallback>
+               </Avatar>
+               <span className="font-bold text-sm sm:text-base">{targetUser.name}의 목표</span>
+             </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <ThemeToggle />
+            <UserMenu user={authUser} />
           </div>
         </div>
       </header>
 
-      <main className="container mx-auto px-4 py-8 space-y-8">
-        {/* 오늘의 기록 버튼 */}
-        {isOwnPage && (
-          <Link href={`/periods/${periodId}/users/${userId}/logs/${today}`}>
-            <Card className="bg-primary text-primary-foreground hover:opacity-90 transition-opacity cursor-pointer">
-              <CardContent className="py-4 flex items-center justify-between">
-                <div>
-                  <p className="font-medium">오늘의 기록</p>
-                  <p className="text-sm opacity-80">
-                    {todayLog ? '수정하기' : '작성하기'}
-                  </p>
-                </div>
-                <span className="text-2xl">→</span>
-              </CardContent>
-            </Card>
-          </Link>
-        )}
+      <main className="container mx-auto px-4 max-w-5xl py-8 space-y-8">
+        {/* 상단 프로필 및 액션 섹션 */}
+        <FadeIn>
+           <div className="flex flex-col md:flex-row gap-6 md:items-stretch">
+              {/* 프로필 요약 카드 (왼쪽) */}
+              <div className="flex-1 bg-white dark:bg-zinc-900 rounded-2xl p-6 shadow-sm border border-zinc-200 dark:border-zinc-800 flex items-center gap-6">
+                 <Avatar className="h-20 w-20 border-4 border-zinc-50 dark:border-zinc-950 shadow-md">
+                    <AvatarImage src={targetUser.avatar_url || undefined} />
+                    <AvatarFallback className="text-2xl">{targetUser.name?.charAt(0) || '?'}</AvatarFallback>
+                 </Avatar>
+                 <div>
+                    <h1 className="text-2xl font-bold mb-1">{targetUser.name}</h1>
+                    <p className="text-zinc-500 dark:text-zinc-400 text-sm">{period.title} 도전 중</p>
+                    <div className="flex gap-2 mt-3">
+                       <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-zinc-100 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200">
+                          총 {(goals || []).length}개 목표
+                       </span>
+                    </div>
+                 </div>
+              </div>
+
+              {/* 오늘의 기록 버튼 (오른쪽 - 본인일 때만) */}
+              {isOwnPage && (
+                 <Link href={`/periods/${periodId}/users/${userId}/logs/${today}`} className="md:w-1/3 flex-shrink-0 group">
+                    <div className="h-full bg-gradient-to-br from-rose-500 to-orange-500 rounded-2xl p-6 shadow-md text-white flex flex-col justify-between hover:shadow-lg hover:scale-[1.02] transition-all duration-300">
+                       <div className="flex justify-between items-start">
+                          <div>
+                             <p className="font-bold text-lg mb-1">오늘의 기록</p>
+                             <p className="text-rose-100 text-sm">{formatDateKorean(today)}</p>
+                          </div>
+                          <div className="bg-white/20 p-2 rounded-lg backdrop-blur-sm">
+                             <PenLine className="h-6 w-6" />
+                          </div>
+                       </div>
+                       <div className="flex items-center gap-2 mt-4 text-sm font-medium">
+                          {todayLog ? '수정하기' : '작성하러 가기'} <ArrowLeft className="rotate-180 h-4 w-4" />
+                       </div>
+                    </div>
+                 </Link>
+              )}
+           </div>
+        </FadeIn>
 
         {/* 목표 목록 */}
-        <section>
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold">목표 ({(goals || []).length}개)</h2>
+        <section className="space-y-6">
+          <FadeIn delay={0.2} className="flex items-center justify-between">
+            <h2 className="text-xl font-bold flex items-center gap-2">
+               <Sparkles className="h-5 w-5 text-yellow-500" />
+               목표 리스트
+            </h2>
             {isOwnPage && (
               <AddGoalDialog periodId={periodId} userId={userId} />
             )}
-          </div>
+          </FadeIn>
 
           {(!goals || goals.length === 0) ? (
-            <Card>
-              <CardContent className="py-8 text-center text-zinc-500">
-                <p>아직 등록된 목표가 없습니다.</p>
-                {isOwnPage && (
-                  <p className="text-sm mt-2">위의 버튼을 눌러 첫 번째 목표를 추가하세요!</p>
-                )}
-              </CardContent>
-            </Card>
+            <FadeIn delay={0.3}>
+               <div className="flex flex-col items-center justify-center py-16 text-center border rounded-2xl bg-white dark:bg-zinc-900 border-dashed border-zinc-200 dark:border-zinc-800">
+                 <p className="text-zinc-500 mb-2">아직 등록된 목표가 없습니다.</p>
+                 {isOwnPage && (
+                   <p className="text-sm text-zinc-400">오른쪽 상단의 버튼을 눌러 첫 번째 목표를 추가하세요!</p>
+                 )}
+               </div>
+            </FadeIn>
           ) : (
-            <div className="space-y-4">
+            <StaggerContainer className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {goals.map((goal: Goal) => (
-                <GoalCard 
-                  key={goal.id} 
-                  goal={goal} 
-                  period={period}
-                  isEditable={isOwnPage} 
-                />
+                <StaggerItem key={goal.id}>
+                  <GoalCard 
+                    goal={goal} 
+                    period={period}
+                    isEditable={isOwnPage} 
+                  />
+                </StaggerItem>
               ))}
-            </div>
+            </StaggerContainer>
           )}
         </section>
 
         {/* 최근 기록 */}
-        <section>
-          <h2 className="text-lg font-semibold mb-4">최근 기록</h2>
-          
-          {(!recentLogs || recentLogs.length === 0) ? (
-            <Card>
-              <CardContent className="py-8 text-center text-zinc-500">
-                <p>아직 작성된 기록이 없습니다.</p>
-              </CardContent>
-            </Card>
-          ) : (
-            <div className="space-y-3">
-              {recentLogs.map((log: DailyLog) => (
-                <Link 
-                  key={log.id} 
-                  href={`/periods/${periodId}/users/${userId}/logs/${log.log_date}`}
-                >
-                  <Card className="hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-colors cursor-pointer">
-                    <CardContent className="py-3 flex items-center justify-between">
-                      <div>
-                        <p className="font-medium">{formatDateKorean(log.log_date)}</p>
-                        <p className="text-sm text-zinc-500 truncate max-w-xs">
-                          {log.diary ? log.diary.slice(0, 50) + (log.diary.length > 50 ? '...' : '') : '(일기 없음)'}
-                        </p>
-                      </div>
-                      <span className="text-zinc-400">→</span>
-                    </CardContent>
-                  </Card>
-                </Link>
-              ))}
-            </div>
-          )}
-        </section>
+        <FadeIn delay={0.4}>
+           <section className="space-y-4">
+              <h2 className="text-xl font-bold flex items-center gap-2">
+                 <History className="h-5 w-5 text-blue-500" />
+                 최근 기록
+              </h2>
+              
+              {(!recentLogs || recentLogs.length === 0) ? (
+                 <div className="py-12 text-center text-zinc-500 bg-zinc-50 dark:bg-zinc-900/50 rounded-xl border border-zinc-100 dark:border-zinc-800">
+                    <p>아직 작성된 기록이 없습니다.</p>
+                 </div>
+              ) : (
+                 <div className="space-y-3">
+                    {recentLogs.map((log: DailyLog) => (
+                       <Link 
+                          key={log.id} 
+                          href={`/periods/${periodId}/users/${userId}/logs/${log.log_date}`}
+                          className="block group"
+                       >
+                          <Card className="hover:border-zinc-300 dark:hover:border-zinc-700 transition-colors shadow-sm hover:shadow-md cursor-pointer border-zinc-200 dark:border-zinc-800 bg-white/60 dark:bg-zinc-900/60 backdrop-blur-sm">
+                             <CardContent className="py-4 flex items-center justify-between">
+                                <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4">
+                                   <p className="font-semibold text-zinc-900 dark:text-zinc-100 w-32 flex-shrink-0">
+                                      {formatDateKorean(log.log_date)}
+                                   </p>
+                                   <p className="text-sm text-zinc-500 dark:text-zinc-400 line-clamp-1 group-hover:text-zinc-800 dark:group-hover:text-zinc-300 transition-colors">
+                                      {log.diary || '(일기 내용 없음)'}
+                                   </p>
+                                </div>
+                                <ArrowLeft className="rotate-180 h-4 w-4 text-zinc-300 group-hover:text-zinc-600 dark:group-hover:text-zinc-400 transition-colors" />
+                             </CardContent>
+                          </Card>
+                       </Link>
+                    ))}
+                 </div>
+              )}
+           </section>
+        </FadeIn>
       </main>
     </div>
   );

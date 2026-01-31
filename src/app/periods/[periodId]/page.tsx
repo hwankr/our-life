@@ -7,7 +7,10 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Progress } from "@/components/ui/progress";
 import { formatDateKorean, formatDDay, getDaysBetween } from "@/lib/date-utils";
 import { User, Period, Goal } from "@/types";
-import { LogoutButton } from "@/components/logout-button";
+import { UserMenu } from "@/components/user-menu";
+import { ThemeToggle } from "@/components/theme-toggle";
+import { FadeIn, StaggerContainer, StaggerItem } from "@/components/ui/motion-layout";
+import { CalendarDays, ArrowRight, ArrowLeft } from "lucide-react";
 
 interface PeriodPageProps {
   params: Promise<{ periodId: string }>;
@@ -58,44 +61,56 @@ export default async function PeriodPage({ params }: PeriodPageProps) {
   const periodProgress = Math.min(Math.max((elapsedDays / totalDays) * 100, 0), 100);
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-zinc-50 to-zinc-100 dark:from-zinc-900 dark:to-zinc-950">
+    <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950 selection:bg-rose-500/20 selection:text-rose-600">
       {/* 헤더 */}
-      <header className="sticky top-0 z-10 bg-white/80 dark:bg-zinc-900/80 backdrop-blur border-b">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <div>
-            <h1 className="text-xl font-bold">{period.title}</h1>
-            <p className="text-sm text-zinc-500">
-              {formatDateKorean(period.start_date)} ~ {formatDateKorean(period.end_date)}
-            </p>
-          </div>
+      <header className="sticky top-0 z-50 w-full border-b border-zinc-200/50 dark:border-zinc-800/50 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md">
+        <div className="container mx-auto flex h-16 max-w-5xl items-center justify-between px-4">
           <div className="flex items-center gap-4">
-            <span className="text-sm font-medium text-zinc-600 dark:text-zinc-400">
-              {formatDDay(period.end_date)}
+            <Link href="/app" className="text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-200 transition-colors">
+               <ArrowLeft className="h-5 w-5" />
+            </Link>
+            <h1 className="text-lg font-bold tracking-tight truncate max-w-[200px] sm:max-w-md">{period.title}</h1>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="hidden sm:inline-block text-xs font-medium px-2.5 py-0.5 rounded-full bg-rose-100 dark:bg-rose-900/30 text-rose-600 dark:text-rose-400">
+               {formatDDay(period.end_date)}
             </span>
-            <LogoutButton />
+            <ThemeToggle />
+            <UserMenu user={authUser} />
           </div>
         </div>
       </header>
 
-      <main className="container mx-auto px-4 py-8 space-y-8">
-        {/* 기간 진행률 */}
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-lg">기간 진행률</CardTitle>
-            <CardDescription>
-              {elapsedDays > 0 ? `${elapsedDays}일 경과` : '시작 전'} / 총 {totalDays}일
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Progress value={periodProgress} className="h-3" />
-            <p className="text-right text-sm text-zinc-500 mt-1">
-              {Math.round(periodProgress)}%
-            </p>
-          </CardContent>
-        </Card>
+      <main className="container mx-auto px-4 max-w-5xl py-8 space-y-10">
+        
+        {/* 기간 요약 및 진행률 */}
+        <FadeIn>
+           <section className="bg-white dark:bg-zinc-900 rounded-2xl p-6 shadow-sm border border-zinc-200 dark:border-zinc-800">
+              <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-6">
+                 <div>
+                    <h2 className="text-sm font-semibold text-zinc-500 uppercase tracking-wider mb-1">Period Progress</h2>
+                    <div className="flex items-center gap-2">
+                       <CalendarDays className="h-5 w-5 text-zinc-400" />
+                       <span className="text-2xl font-bold font-mono">
+                          {Math.round(periodProgress)}%
+                       </span>
+                    </div>
+                 </div>
+                 <div className="text-right">
+                    <p className="text-sm text-zinc-500 dark:text-zinc-400 mb-1">
+                       {formatDateKorean(period.start_date)} - {formatDateKorean(period.end_date)}
+                    </p>
+                    <p className="text-xs font-medium text-rose-500">
+                       {elapsedDays > 0 ? `${elapsedDays}일 지남` : '시작 전'} / 총 {totalDays}일 여정
+                    </p>
+                 </div>
+              </div>
+              <Progress value={periodProgress} className="h-3" indicatorClassName="bg-gradient-to-r from-rose-500 to-orange-500" />
+           </section>
+        </FadeIn>
 
-        {/* 참여자 카드 */}
-        <div className="grid gap-6 md:grid-cols-2">
+        {/* 참여자 카드 목록 */}
+        <StaggerContainer className="grid gap-6 md:grid-cols-2">
           {(participants || []).map((participant: User) => {
             const userGoals = goalsByUser[participant.id] || [];
             const completedGoals = userGoals.filter((g: Goal) => {
@@ -118,65 +133,78 @@ export default async function PeriodPage({ params }: PeriodPageProps) {
               : 0;
 
             return (
-              <Card key={participant.id} className="hover:shadow-md transition-shadow">
-                <CardHeader>
-                  <div className="flex items-center gap-4">
-                    <Avatar className="h-12 w-12">
-                      <AvatarImage src={participant.avatar_url || undefined} />
-                      <AvatarFallback>{participant.name?.charAt(0) || '?'}</AvatarFallback>
-                    </Avatar>
-                    <div className="flex-1">
-                      <CardTitle className="text-lg">{participant.name}</CardTitle>
-                      <CardDescription>
-                        목표 {userGoals.length}개 • 완료 {completedGoals}개
-                      </CardDescription>
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  {/* 전체 달성률 */}
-                  <div>
-                    <div className="flex justify-between text-sm mb-1">
-                      <span className="text-zinc-600 dark:text-zinc-400">전체 달성률</span>
-                      <span className="font-medium">{Math.round(avgProgress)}%</span>
-                    </div>
-                    <Progress value={avgProgress} className="h-2" />
-                  </div>
+              <StaggerItem key={participant.id}>
+                <Link href={`/periods/${periodId}/users/${participant.id}`} className="block h-full">
+                  <Card className="h-full hover:-translate-y-1 transition-all duration-300 hover:shadow-xl border-zinc-200 dark:border-zinc-800 bg-white/50 dark:bg-zinc-900/50 backdrop-blur-sm group cursor-pointer overflow-hidden relative">
+                     {/* Hover Accent */}
+                     <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-rose-500 to-orange-500 scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left" />
+                     
+                    <CardHeader className="pb-4">
+                      <div className="flex items-center gap-4">
+                         <div className="relative">
+                            <Avatar className="h-16 w-16 border-4 border-white dark:border-zinc-950 shadow-sm">
+                              <AvatarImage src={participant.avatar_url || undefined} />
+                              <AvatarFallback className="bg-zinc-100 dark:bg-zinc-800 text-lg font-bold">{participant.name?.charAt(0) || '?'}</AvatarFallback>
+                            </Avatar>
+                            {/* Status Indicator (Optional) */}
+                            <div className="absolute bottom-0 right-0 h-4 w-4 rounded-full bg-emerald-500 border-2 border-white dark:border-zinc-950" />
+                         </div>
+                        <div className="flex-1 min-w-0">
+                          <CardTitle className="text-xl font-bold truncate">{participant.name}</CardTitle>
+                          <CardDescription className="flex items-center gap-1 mt-1">
+                             <span className="font-medium text-zinc-900 dark:text-zinc-100">{userGoals.length}</span>개의 목표 도전 중
+                          </CardDescription>
+                        </div>
+                        <ArrowRight className="h-5 w-5 text-zinc-300 group-hover:text-rose-500 transition-colors" />
+                      </div>
+                    </CardHeader>
+                    
+                    <CardContent className="space-y-6">
+                      {/* 전체 달성률 */}
+                      <div>
+                        <div className="flex justify-between text-sm mb-2">
+                          <span className="text-zinc-600 dark:text-zinc-400 font-medium">전체 달성률</span>
+                          <span className="font-bold text-rose-600 dark:text-rose-400">{Math.round(avgProgress)}%</span>
+                        </div>
+                        <Progress value={avgProgress} className="h-2.5 bg-zinc-100 dark:bg-zinc-800" indicatorClassName="bg-rose-500" />
+                      </div>
 
-                  {/* 목표 미리보기 */}
-                  {userGoals.slice(0, 3).map((goal: Goal) => (
-                    <div key={goal.id} className="flex items-center justify-between text-sm">
-                      <span className="truncate flex-1">{goal.title}</span>
-                      <span className="text-zinc-500 ml-2">
-                        {goal.type === 'ROUTINE' && `${goal.current_count || 0}/${goal.target_count}${goal.unit}`}
-                        {goal.type === 'LIMIT' && `월 ${goal.monthly_limit}${goal.unit} 이하`}
-                        {goal.type === 'OBJECTIVE' && (goal.is_achieved ? '✅ 달성' : '진행 중')}
-                      </span>
-                    </div>
-                  ))}
-                  {userGoals.length > 3 && (
-                    <p className="text-xs text-zinc-400">+{userGoals.length - 3}개 더보기</p>
-                  )}
-
-                  <Link href={`/periods/${periodId}/users/${participant.id}`}>
-                    <Button variant="outline" className="w-full mt-2">
-                      상세 보기
-                    </Button>
-                  </Link>
-                </CardContent>
-              </Card>
+                      <div className="space-y-3">
+                         <p className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Top Priorities</p>
+                         <div className="space-y-2">
+                            {userGoals.slice(0, 3).map((goal: Goal) => (
+                              <div key={goal.id} className="flex items-center justify-between text-sm p-2 rounded-md bg-zinc-50 dark:bg-zinc-800/50 group-hover:bg-zinc-100 dark:group-hover:bg-zinc-800 transition-colors">
+                                <div className="flex items-center gap-2 overflow-hidden">
+                                   <div className={`h-1.5 w-1.5 rounded-full flex-shrink-0 ${
+                                      goal.type === 'ROUTINE' ? 'bg-blue-500' : 
+                                      goal.type === 'LIMIT' ? 'bg-orange-500' : 'bg-purple-500'
+                                   }`} />
+                                   <span className="truncate font-medium text-zinc-700 dark:text-zinc-300">{goal.title}</span>
+                                </div>
+                                <span className="text-xs text-zinc-500 ml-2 whitespace-nowrap flex-shrink-0 font-medium">
+                                  {goal.type === 'ROUTINE' && `${Math.min(goal.current_count || 0, goal.target_count)}/${goal.target_count}`}
+                                  {goal.type === 'LIMIT' && `D-${getDaysBetween(new Date().toISOString(), period.end_date)}`}
+                                  {goal.type === 'OBJECTIVE' && (goal.is_achieved ? 'Success' : 'In Progress')}
+                                </span>
+                              </div>
+                            ))}
+                            {userGoals.length === 0 && (
+                               <div className="text-center py-4 text-xs text-zinc-400 italic">등록된 목표가 없습니다</div>
+                            )}
+                         </div>
+                         {userGoals.length > 3 && (
+                            <p className="text-center text-xs text-zinc-400 pt-1 group-hover:text-zinc-600 dark:group-hover:text-zinc-300 transition-colors">
+                               +{userGoals.length - 3}개의 목표 더보기
+                            </p>
+                         )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                </Link>
+              </StaggerItem>
             );
           })}
-        </div>
-
-        {/* 새 기간 시작 버튼 */}
-        <div className="flex justify-center pt-4">
-          <Link href="/periods/new">
-            <Button variant="ghost">
-              새로운 기간 시작하기
-            </Button>
-          </Link>
-        </div>
+        </StaggerContainer>
       </main>
     </div>
   );

@@ -5,6 +5,9 @@ import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { Goal, Period } from "@/types";
 import { getMonthsBetween } from "@/lib/date-utils";
+import { cn } from "@/lib/utils";
+import { Target, TrendingUp, PiggyBank, MoreHorizontal } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 interface GoalCardProps {
   goal: Goal;
@@ -30,33 +33,45 @@ export function GoalCard({ goal, period, isEditable }: GoalCardProps) {
 
   const progress = getProgress();
 
-  // 타입별 배지 색상
-  const getBadgeVariant = () => {
+  // 타입별 스타일 설정
+  const getTypeStyle = () => {
     switch (goal.type) {
       case 'ROUTINE':
-        return 'default';
+        return {
+          icon: <TrendingUp className="h-4 w-4" />,
+          label: 'Habit',
+          color: 'text-blue-500',
+          bg: 'bg-blue-50 dark:bg-blue-900/20',
+          border: 'border-blue-100 dark:border-blue-900',
+        };
       case 'LIMIT':
-        return 'secondary';
+        return {
+          icon: <PiggyBank className="h-4 w-4" />,
+          label: 'Limit',
+          color: 'text-orange-500',
+          bg: 'bg-orange-50 dark:bg-orange-900/20',
+          border: 'border-orange-100 dark:border-orange-900',
+        };
       case 'OBJECTIVE':
-        return 'outline';
+        return {
+          icon: <Target className="h-4 w-4" />,
+          label: 'Goal',
+          color: 'text-purple-500',
+          bg: 'bg-purple-50 dark:bg-purple-900/20',
+          border: 'border-purple-100 dark:border-purple-900',
+        };
       default:
-        return 'default';
+        return {
+          icon: <Target className="h-4 w-4" />,
+          label: 'Goal',
+          color: 'text-zinc-500',
+          bg: 'bg-zinc-50 dark:bg-zinc-900',
+          border: 'border-zinc-200 dark:border-zinc-800',
+        };
     }
   };
 
-  // 타입별 라벨
-  const getTypeLabel = () => {
-    switch (goal.type) {
-      case 'ROUTINE':
-        return '채우기';
-      case 'LIMIT':
-        return '아껴쓰기';
-      case 'OBJECTIVE':
-        return '도달하기';
-      default:
-        return goal.type;
-    }
-  };
+  const style = getTypeStyle();
 
   // LIMIT 타입: 월별 그리드 렌더링
   const renderMonthlyGrid = () => {
@@ -65,7 +80,7 @@ export function GoalCard({ goal, period, isEditable }: GoalCardProps) {
     const currentYearMonth = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`;
 
     return (
-      <div className="flex gap-1 mt-2">
+      <div className="flex gap-1 mt-3 overflow-x-auto pb-1 scrollbar-hide">
         {months.map(({ year, month }) => {
           const key = `${year}-${String(month).padStart(2, '0')}`;
           const isPast = key < currentYearMonth;
@@ -77,12 +92,13 @@ export function GoalCard({ goal, period, isEditable }: GoalCardProps) {
           return (
             <div
               key={key}
-              className={`w-8 h-8 rounded flex items-center justify-center text-xs font-medium
-                ${isCurrent ? 'border-2 border-primary' : ''}
-                ${isSuccess === true ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' : ''}
-                ${isSuccess === false ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' : ''}
-                ${isSuccess === null ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-500' : ''}
-              `}
+              className={cn(
+                "w-8 h-8 rounded-lg flex items-center justify-center text-xs font-semibold transition-all",
+                isCurrent && "ring-2 ring-offset-2 ring-orange-500 dark:ring-offset-zinc-900",
+                isSuccess === true && "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400",
+                isSuccess === false && "bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400",
+                isSuccess === null && "bg-zinc-100 dark:bg-zinc-800 text-zinc-400"
+              )}
               title={`${year}년 ${month}월`}
             >
               {month}
@@ -94,62 +110,83 @@ export function GoalCard({ goal, period, isEditable }: GoalCardProps) {
   };
 
   return (
-    <Card>
-      <CardHeader className="pb-2">
-        <div className="flex items-start justify-between">
-          <div>
-            <CardTitle className="text-base">{goal.title}</CardTitle>
-            <Badge variant={getBadgeVariant()} className="mt-1">
-              {getTypeLabel()}
-            </Badge>
-          </div>
-          <div className="text-right text-sm">
+    <Card className={cn(
+       "group relative overflow-hidden transition-all duration-300 hover:shadow-lg hover:-translate-y-1 bg-white dark:bg-zinc-900",
+       "border-l-4",
+       goal.type === 'ROUTINE' && "border-l-blue-500",
+       goal.type === 'LIMIT' && "border-l-orange-500",
+       goal.type === 'OBJECTIVE' && "border-l-purple-500",
+    )}>
+      <CardHeader className="pb-3 pt-4 px-5">
+        <div className="flex items-start justify-between mb-1">
+           <div className={cn("inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium mb-2", style.bg, style.color)}>
+              {style.icon}
+              {style.label}
+           </div>
+           {isEditable && (
+              <Button variant="ghost" size="icon" className="h-6 w-6 -mr-2 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300">
+                 <MoreHorizontal className="h-4 w-4" />
+              </Button>
+           )}
+        </div>
+        <CardTitle className="text-lg font-bold leading-tight">{goal.title}</CardTitle>
+      </CardHeader>
+      
+      <CardContent className="px-5 pb-5">
+        {/* 상태 표시 */}
+        <div className="mb-4 text-sm">
             {goal.type === 'ROUTINE' && (
-              <span className="font-medium">
-                {goal.current_count || 0} / {goal.target_count}{goal.unit}
-              </span>
+               <div className="flex justify-between items-end mb-2">
+                  <span className="text-zinc-500 dark:text-zinc-400">Current</span>
+                  <span className="font-semibold text-zinc-900 dark:text-zinc-100 text-base">
+                     {goal.current_count || 0} <span className="text-zinc-400 text-sm font-normal">/ {goal.target_count}{goal.unit}</span>
+                  </span>
+               </div>
             )}
             {goal.type === 'LIMIT' && (
-              <span className="font-medium">
-                월 {goal.monthly_limit}{goal.unit} 이하
-              </span>
+               <div className="flex justify-between items-end mb-2">
+                  <span className="text-zinc-500 dark:text-zinc-400">Monthly Limit</span>
+                  <span className="font-semibold text-zinc-900 dark:text-zinc-100 text-base">
+                     {goal.monthly_limit}{goal.unit}
+                  </span>
+               </div>
             )}
             {goal.type === 'OBJECTIVE' && (
-              <span className={`font-medium ${goal.is_achieved ? 'text-green-600' : ''}`}>
-                {goal.is_achieved ? '✅ 달성!' : `목표: ${goal.target_value}${goal.unit}`}
-              </span>
+               <div className="flex justify-between items-end mb-2">
+                  <span className="text-zinc-500 dark:text-zinc-400">Target</span>
+                  <span className={cn("font-semibold text-base", goal.is_achieved ? "text-emerald-500" : "text-zinc-900 dark:text-zinc-100")}>
+                     {goal.is_achieved ? 'Achieved!' : `${goal.target_value}${goal.unit}`}
+                  </span>
+               </div>
             )}
-          </div>
         </div>
-      </CardHeader>
-      <CardContent>
-        {goal.type === 'ROUTINE' && (
-          <div>
-            <Progress value={progress} className="h-2" />
-            <p className="text-right text-xs text-zinc-500 mt-1">
-              {Math.round(progress)}%
-            </p>
-          </div>
-        )}
-        
-        {goal.type === 'LIMIT' && renderMonthlyGrid()}
-        
-        {goal.type === 'OBJECTIVE' && (
-          <div>
-            {goal.subcategories && goal.subcategories.length > 0 && (
-              <div className="flex flex-wrap gap-1 mt-2">
-                {goal.subcategories.map((sub: string) => (
-                  <Badge key={sub} variant="outline" className="text-xs">
-                    {sub}
-                  </Badge>
-                ))}
-              </div>
-            )}
-            <p className="text-sm text-zinc-500 mt-2">
-              공부 기록을 쌓으며 목표를 향해 나아가세요!
-            </p>
-          </div>
-        )}
+
+        {/* 진행률 바 / 그리드 / 태그 */}
+        <div>
+           {goal.type === 'ROUTINE' && (
+             <div className="relative pt-1">
+               <Progress value={progress} className="h-2.5 bg-zinc-100 dark:bg-zinc-800" indicatorClassName="bg-blue-500" />
+             </div>
+           )}
+           
+           {goal.type === 'LIMIT' && renderMonthlyGrid()}
+           
+           {goal.type === 'OBJECTIVE' && (
+             <div className="space-y-3">
+               {goal.subcategories && goal.subcategories.length > 0 ? (
+                 <div className="flex flex-wrap gap-1.5">
+                   {goal.subcategories.map((sub: string) => (
+                     <Badge key={sub} variant="secondary" className="bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700 border-none font-normal">
+                       {sub}
+                     </Badge>
+                   ))}
+                 </div>
+               ) : (
+                  <p className="text-sm text-zinc-400 italic">세부 목표가 없습니다</p>
+               )}
+             </div>
+           )}
+        </div>
       </CardContent>
     </Card>
   );
