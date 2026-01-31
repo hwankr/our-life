@@ -10,6 +10,7 @@ import { User, Period, Goal } from "@/types";
 import { UserMenu } from "@/components/user-menu";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { FadeIn, StaggerContainer, StaggerItem } from "@/components/ui/motion-layout";
+import { EditPeriodDialog } from "@/components/periods/EditPeriodDialog";
 import { CalendarDays, ArrowRight, ArrowLeft } from "lucide-react";
 
 interface PeriodPageProps {
@@ -75,6 +76,7 @@ export default async function PeriodPage({ params }: PeriodPageProps) {
             <span className="hidden sm:inline-block text-xs font-medium px-2.5 py-0.5 rounded-full bg-rose-100 dark:bg-rose-900/30 text-rose-600 dark:text-rose-400">
                {formatDDay(period.end_date)}
             </span>
+            <EditPeriodDialog period={period} />
             <ThemeToggle />
             <UserMenu user={authUser} />
           </div>
@@ -105,7 +107,7 @@ export default async function PeriodPage({ params }: PeriodPageProps) {
                     </p>
                  </div>
               </div>
-              <Progress value={periodProgress} className="h-3" indicatorClassName="bg-gradient-to-r from-rose-500 to-orange-500" />
+              <Progress value={periodProgress} className="h-3" />
            </section>
         </FadeIn>
 
@@ -166,7 +168,7 @@ export default async function PeriodPage({ params }: PeriodPageProps) {
                           <span className="text-zinc-600 dark:text-zinc-400 font-medium">전체 달성률</span>
                           <span className="font-bold text-rose-600 dark:text-rose-400">{Math.round(avgProgress)}%</span>
                         </div>
-                        <Progress value={avgProgress} className="h-2.5 bg-zinc-100 dark:bg-zinc-800" indicatorClassName="bg-rose-500" />
+                        <Progress value={avgProgress} className="h-2.5 bg-zinc-100 dark:bg-zinc-800" />
                       </div>
 
                       <div className="space-y-3">
