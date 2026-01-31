@@ -17,6 +17,7 @@ import { createClient } from "@/lib/supabase/client";
 import { toast } from "sonner";
 import { Settings, UserPlus } from "lucide-react";
 import { Period } from "@/types";
+import { deletePeriod } from "@/app/actions/period-actions";
 
 interface EditPeriodDialogProps {
   period: Period;
@@ -105,18 +106,19 @@ export function EditPeriodDialog({ period, trigger }: EditPeriodDialogProps) {
      
      setIsLoading(true);
      try {
-        const supabase = createClient();
-        const { error } = await supabase.from('periods').delete().eq('id', period.id);
+        const result = await deletePeriod(period.id);
         
-        if (error) throw error;
+        if (!result.success) {
+           throw new Error(result.error || "삭제에 실패했습니다.");
+        }
         
-        toast.success("기간이 삭제되었습니다.");
+        toast.success("기간과 모든 데이터가 삭제되었습니다.");
         setOpen(false);
-        router.push('/app'); 
-        router.refresh();
-     } catch (error) {
+        router.push('/app');
+     } catch (error: any) {
         console.error("기간 삭제 오류:", error);
-        toast.error("기간 삭제에 실패했습니다.");
+        toast.error(`삭제 실패: ${error.message || "알 수 없는 오류"}`);
+     } finally {
         setIsLoading(false);
      }
   };
