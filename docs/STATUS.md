@@ -7,9 +7,9 @@
 
 ## 프로젝트 정보
 
-- **이름**: OurLife
+- **이름**: OurLife (폴더명: our-life)
 - **목적**: 친구와 6개월 목표 달성 추적 웹앱
-- **스택**: Next.js 14 (App Router) + Supabase + TypeScript + Tailwind + shadcn/ui
+- **스택**: Next.js 16.1.6 (App Router, Turbopack) + Supabase + TypeScript + Tailwind CSS v4 + shadcn/ui
 
 ---
 
@@ -17,58 +17,53 @@
 
 | 단계 | 상태 |
 |------|------|
-| 설계 | ✅ 완료 (사용자 확인 대기) |
-| 프로젝트 초기화 | ⏳ 대기 |
-| DB 스키마 생성 | ⏳ 대기 |
-| 인증 구현 | ⏳ 대기 |
-| Period 기능 | ⏳ 대기 |
-| Goal 기능 | ⏳ 대기 |
-| DailyLog 기능 | ⏳ 대기 |
-| UI 완성 | ⏳ 대기 |
+| 설계 | ✅ 완료 |
+| 프로젝트 초기화 | ✅ 완료 |
+| DB 스키마 생성 | ✅ 코드 완료 (사용자 Supabase 실행 필요) |
+| 인증 구현 | ✅ 완료 (Google OAuth) |
+| Period 기능 | ✅ 완료 |
+| Goal 기능 | ✅ 완료 (3가지 타입) |
+| DailyLog 기능 | ✅ 완료 |
+| UI 완성 | ✅ 기본 완료 |
+| 빌드 테스트 | ✅ 성공 |
 
 ---
 
-## 완료된 작업
+## 라우트 구조 (9개)
 
-1. ✅ 기술 스택 선택 (Supabase + Next.js)
-2. ✅ 도메인 모델 설계 (6개 엔티티)
-3. ✅ DB 스키마 초안 작성
-4. ✅ 목표 타입별 계산 로직 설계
-5. ✅ 라우팅/페이지 구조 설계
-6. ✅ MVP 범위 확정
-7. ✅ docs 폴더 템플릿 생성
-
----
-
-## 다음 작업
-
-1. 사용자 확인 대기 (스택, 이름, 정책 결정)
-2. Next.js 프로젝트 초기화
-3. Supabase 프로젝트 연동
-4. DB 테이블 생성
+```
+/                     → 랜딩/로그인
+/auth/login           → Google OAuth
+/auth/callback        → OAuth 콜백
+/auth/auth-code-error → 인증 오류
+/app                  → Active Period 리다이렉트
+/periods/new          → 새 기간 생성
+/periods/[periodId]   → 기간 요약
+/periods/[periodId]/users/[userId]           → 개인 상세
+/periods/[periodId]/users/[userId]/logs/[date] → 일일 기록
+```
 
 ---
 
-## 확인 필요 사항
+## 사용자 대기 작업
 
-1. **프로젝트 이름**: ourLife 확정?
-2. **LIMIT 중복 정책**: 하루에 여러 번 체크 허용?
-3. **MVP 범위**: 추가/제거할 기능?
+1. Supabase 프로젝트 생성 및 Google OAuth 설정
+2. `supabase/schema.sql` 실행
+3. `.env.local` 파일 생성
 
 ---
 
 ## 주요 파일 위치
 
 ```
-ourLife/
-├── docs/
-│   ├── DECISIONS.md   # 의사결정 로그
-│   ├── SCHEMA.md      # DB 스키마
-│   ├── ROUTES_UI.md   # 라우팅/UI
-│   ├── CHANGELOG.md   # 변경 로그
-│   └── STATUS.md      # 이 문서
-├── src/               # (아직 없음)
-└── ...
+our-life/
+├── src/app/                    # 페이지
+├── src/components/             # 컴포넌트
+├── src/lib/supabase/           # Supabase 클라이언트
+├── src/lib/goal-calculator.ts  # 달성률 계산
+├── src/types/index.ts          # 타입 정의
+├── supabase/schema.sql         # DB 스키마
+└── docs/                       # 프로젝트 문서
 ```
 
 ---
@@ -77,4 +72,4 @@ ourLife/
 
 - **날짜**: 2026-02-01
 - **작업자**: AI
-- **내용**: 초기 설계 완료
+- **내용**: 초기 설정 및 MVP 기능 구현 완료, 빌드 테스트 성공

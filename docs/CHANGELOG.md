@@ -4,21 +4,26 @@
 
 ---
 
+## 2026-01-31
+
+### 수정
+- 기간 생성 기본 날짜가 빈 값으로 저장되던 문제 수정
+
 ## 2026-02-01
 
 ### 추가
-- 프로젝트 초기 설계 완료
-- docs 폴더 구조 생성
-  - DECISIONS.md
-  - SCHEMA.md
-  - ROUTES_UI.md
-  - CHANGELOG.md
-  - STATUS.md
+- 프로젝트 초기화 (Next.js 16.1.6 + Supabase)
+- 9개 페이지 라우트 구현
+  - 랜딩, 로그인, 기간 생성, 기간 상세, 개인 상세, 일일 기록
+- 5개 DB 테이블 스키마 (`supabase/schema.sql`)
+- 3가지 목표 타입 지원 (ROUTINE, LIMIT, OBJECTIVE)
+- 목표 달성률 계산 로직 (`goal-calculator.ts`)
+- shadcn/ui 컴포넌트 14개 설치
 
 ### 결정
 - 기술 스택: Supabase + Next.js (App Router)
 - 단일 Goal 테이블 + optional fields 방식
-- MVP 범위 확정 (3주 내 완료 목표)
+- LIMIT 중복 정책: 하루에 여러 번 체크 허용
 
 ---
 
