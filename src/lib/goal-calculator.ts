@@ -1,12 +1,27 @@
 /**
  * 목표 달성률 계산 함수들
  * 
- * ROUTINE: currentCount / targetCount
- * LIMIT: 성공한 달 수 / 전체 달 수
+ * ROUTINE: 
+ *   - TOTAL: currentCount / targetCount
+ *   - WEEKLY: 이번 주 횟수 / 주간 목표
+ *   - MONTHLY: 이번 달 횟수 / 월간 목표
+ * LIMIT: 
+ *   - WEEKLY: 성공한 주 수 / 전체 주 수
+ *   - MONTHLY: 성공한 달 수 / 전체 달 수
  * OBJECTIVE: 공부 로그 수 + 달성 여부
  */
 
-import { Goal, GoalLog, GoalProgress, Period } from '@/types';
+import { Goal, GoalLog, GoalProgress, Period, GoalCycle } from '@/types';
+
+/**
+ * 로컬 타임존 기준 날짜 포맷 (YYYY-MM-DD)
+ */
+function formatLocalDate(date: Date): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
 
 /**
  * 두 날짜 사이의 월 목록 반환
@@ -31,20 +46,146 @@ export function getMonthsBetween(startDate: string, endDate: string): { year: nu
 }
 
 /**
+ * 두 날짜 사이의 주 목록 반환 (ISO 주차 기준)
+ */
+export function getWeeksBetween(startDate: string, endDate: string): { year: number; week: number }[] {
+  const start = new Date(startDate);
+  const end = new Date(endDate);
+  const weeks: { year: number; week: number }[] = [];
+  
+  // 시작 날짜의 주 월요일로 이동
+  const current = new Date(start);
+  const dayOfWeek = current.getDay();
+  const diff = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+  current.setDate(current.getDate() + diff);
+
+  while (current <= end) {
+    const { year, week } = getISOWeekNumber(current);
+    weeks.push({ year, week });
+    current.setDate(current.getDate() + 7);
+  }
+
+  return weeks;
+}
+
+/**
+ * ISO 주차 번호 계산 (월요일 시작)
+ */
+export function getISOWeekNumber(date: Date): { year: number; week: number } {
+  const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+  const dayNum = d.getUTCDay() || 7;
+  d.setUTCDate(d.getUTCDate() + 4 - dayNum);
+  const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+  const week = Math.ceil((((d.getTime() - yearStart.getTime()) / 86400000) + 1) / 7);
+  return { year: d.getUTCFullYear(), week };
+}
+
+/**
+ * 날짜를 주차 키로 변환 (YYYY-WNN)
+ */
+export function getWeekKey(dateStr: string): string {
+  const date = new Date(dateStr);
+  const { year, week } = getISOWeekNumber(date);
+  return `${year}-W${String(week).padStart(2, '0')}`;
+}
+
+/**
+ * 날짜를 월 키로 변환 (YYYY-MM)
+ */
+export function getMonthKey(dateStr: string): string {
+  return dateStr.slice(0, 7);
+}
+
+/**
+ * 현재 주차 키 반환
+ */
+export function getCurrentWeekKey(): string {
+  return getWeekKey(formatLocalDate(new Date()));
+}
+
+/**
+ * 현재 월 키 반환
+ */
+export function getCurrentMonthKey(): string {
+  return getMonthKey(formatLocalDate(new Date()));
+}
+
+/**
  * ROUTINE 목표 달성률 계산
  */
-export function calculateRoutineProgress(goal: Goal): GoalProgress {
-  const currentCount = goal.current_count || 0;
-  const targetCount = goal.target_count || 1;
-  const progressPercent = Math.min((currentCount / targetCount) * 100, 100);
+export function calculateRoutineProgress(
+  goal: Goal,
+  goalLogs?: GoalLog[],
+  logDateMap?: Map<string, string>
+): GoalProgress {
+  const cycle = goal.cycle || 'TOTAL';
+  
+  if (cycle === 'TOTAL') {
+    // 전체 기간 목표
+    const currentCount = goal.current_count || 0;
+    const targetCount = goal.target_count || 1;
+    const progressPercent = Math.min((currentCount / targetCount) * 100, 100);
+
+    return {
+      goal_id: goal.id,
+      type: 'ROUTINE',
+      progress_percent: Math.round(progressPercent * 10) / 10,
+      current_value: currentCount,
+      target_value: targetCount,
+    };
+  }
+  
+  // 주간/월간 반복 목표
+  const limitValue = goal.limit_value || goal.target_count || 1;
+  const currentKey = cycle === 'WEEKLY' ? getCurrentWeekKey() : getCurrentMonthKey();
+  
+  // 현재 주기의 횟수 계산
+  let currentPeriodCount = 0;
+  if (goalLogs && logDateMap) {
+    goalLogs.forEach((gl) => {
+      const logDate = logDateMap.get(gl.daily_log_id);
+      if (!logDate) return;
+      
+      const logKey = cycle === 'WEEKLY' 
+        ? getWeekKey(logDate) 
+        : getMonthKey(logDate);
+      
+      if (logKey === currentKey) {
+        currentPeriodCount += gl.count;
+      }
+    });
+  }
+  
+  const progressPercent = Math.min((currentPeriodCount / limitValue) * 100, 100);
 
   return {
     goal_id: goal.id,
     type: 'ROUTINE',
     progress_percent: Math.round(progressPercent * 10) / 10,
-    current_value: currentCount,
-    target_value: targetCount,
+    current_value: currentPeriodCount,
+    target_value: limitValue,
   };
+}
+
+/**
+ * 주간 사용량 계산
+ */
+export function calculateWeeklyUsage(
+  goalLogs: GoalLog[],
+  logDateMap: Map<string, string>
+): Map<string, number> {
+  const weeklyUsage = new Map<string, number>();
+
+  goalLogs.forEach((log) => {
+    const logDate = logDateMap.get(log.daily_log_id);
+    if (!logDate) return;
+
+    const weekKey = getWeekKey(logDate);
+    const current = weeklyUsage.get(weekKey) || 0;
+    weeklyUsage.set(weekKey, current + log.count);
+  });
+
+  return weeklyUsage;
 }
 
 /**
@@ -77,9 +218,64 @@ export function calculateLimitProgress(
   goalLogs: GoalLog[],
   logDateMap: Map<string, string>
 ): GoalProgress {
+  const cycle = goal.cycle || 'MONTHLY';
+  const limitValue = goal.limit_value || goal.monthly_limit || 0;
+  const today = formatLocalDate(new Date());
+  
+  if (cycle === 'TOTAL') {
+    // 전체 기간 제한
+    const totalUsage = goalLogs.reduce((sum, log) => sum + log.count, 0);
+    const isSuccess = totalUsage <= limitValue;
+    const progressPercent = isSuccess ? 100 : Math.max(0, (1 - (totalUsage - limitValue) / limitValue) * 100);
+
+    return {
+      goal_id: goal.id,
+      type: 'LIMIT',
+      progress_percent: Math.round(progressPercent * 10) / 10,
+      current_value: isSuccess ? 1 : 0,
+      target_value: 1,
+    };
+  }
+  
+  if (cycle === 'WEEKLY') {
+    // 주간 제한
+    const weeklyUsage = calculateWeeklyUsage(goalLogs, logDateMap);
+    const weeks = getWeeksBetween(period.start_date, period.end_date);
+    const currentWeekKey = getCurrentWeekKey();
+    
+    const weeklyStatus = weeks.map(({ year, week }) => {
+      const key = `${year}-W${String(week).padStart(2, '0')}`;
+      const used = weeklyUsage.get(key) || 0;
+      return {
+        year,
+        week,
+        used,
+        limit: limitValue,
+        is_success: used <= limitValue,
+      };
+    });
+
+    // 현재까지 완료된 주만 카운트
+    const completedWeeks = weeklyStatus.filter(
+      (w) => `${w.year}-W${String(w.week).padStart(2, '0')}` <= currentWeekKey
+    );
+
+    const successCount = completedWeeks.filter((w) => w.is_success).length;
+    const progressPercent =
+      completedWeeks.length > 0 ? (successCount / completedWeeks.length) * 100 : 0;
+
+    return {
+      goal_id: goal.id,
+      type: 'LIMIT',
+      progress_percent: Math.round(progressPercent * 10) / 10,
+      current_value: successCount,
+      target_value: weeks.length,
+    };
+  }
+  
+  // 월간 제한 (기존 로직)
   const monthlyUsage = calculateMonthlyUsage(goalLogs, logDateMap);
   const months = getMonthsBetween(period.start_date, period.end_date);
-  const monthlyLimit = goal.monthly_limit || 0;
 
   const monthlyStatus = months.map(({ year, month }) => {
     const key = `${year}-${String(month).padStart(2, '0')}`;
@@ -88,14 +284,13 @@ export function calculateLimitProgress(
       year,
       month,
       used,
-      limit: monthlyLimit,
-      is_success: used <= monthlyLimit,
+      limit: limitValue,
+      is_success: used <= limitValue,
     };
   });
 
   // 현재 진행 중인 달까지만 카운트
-  const today = new Date();
-  const currentYearMonth = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`;
+  const currentYearMonth = today.slice(0, 7);
   const completedMonths = monthlyStatus.filter(
     (m) => `${m.year}-${String(m.month).padStart(2, '0')}` <= currentYearMonth
   );
@@ -150,7 +345,7 @@ export function calculateGoalProgress(
 ): GoalProgress {
   switch (goal.type) {
     case 'ROUTINE':
-      return calculateRoutineProgress(goal);
+      return calculateRoutineProgress(goal, goalLogs, logDateMap);
     case 'LIMIT':
       if (!period || !goalLogs || !logDateMap) {
         throw new Error('LIMIT 타입은 period, goalLogs, logDateMap이 필요합니다');

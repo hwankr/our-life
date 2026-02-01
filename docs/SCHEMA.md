@@ -43,9 +43,11 @@ Goal (1) ──< (N) GoalLog
 | user_id | UUID (FK) | 소유자 |
 | title | TEXT | 목표 제목 |
 | type | TEXT | ROUTINE / LIMIT / OBJECTIVE |
+| cycle | TEXT | 주기: TOTAL / WEEKLY / MONTHLY |
 | target_count | INTEGER | (ROUTINE) 목표 횟수 |
 | current_count | INTEGER | (ROUTINE) 현재 횟수 캐시 |
-| monthly_limit | INTEGER | (LIMIT) 월 제한 |
+| limit_value | INTEGER | (ROUTINE/LIMIT) 주간/월간 제한값 |
+| monthly_limit | INTEGER | (LIMIT) 월 제한 [레거시] |
 | subcategories | JSONB | (OBJECTIVE) 세부 카테고리 |
 | is_achieved | BOOLEAN | (OBJECTIVE) 달성 여부 |
 | achieved_value | INTEGER | (OBJECTIVE) 최종 점수 |

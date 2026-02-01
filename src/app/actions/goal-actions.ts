@@ -3,7 +3,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { revalidatePath } from "next/cache";
-import { GoalType } from "@/types";
+import { GoalType, GoalCycle } from "@/types";
 
 interface AddGoalData {
   periodId: string;
@@ -11,8 +11,10 @@ interface AddGoalData {
   title: string;
   type: GoalType;
   unit: string;
+  cycle?: GoalCycle;
   targetCount?: number;
-  monthlyLimit?: number;
+  limitValue?: number;
+  monthlyLimit?: number; // 레거시 호환
   targetValue?: number;
   subcategories?: string[];
 }
@@ -39,12 +41,20 @@ export async function addGoal(data: AddGoalData): Promise<{ success: boolean; er
       title: data.title,
       type: data.type,
       unit: data.unit,
+      cycle: data.cycle || 'TOTAL',
     };
 
     if (data.type === 'ROUTINE') {
       goalData.target_count = data.targetCount || 1;
+      // 주간/월간 루틴의 경우 limit_value 사용
+      if (data.cycle && data.cycle !== 'TOTAL') {
+        goalData.limit_value = data.limitValue || data.targetCount || 1;
+      }
     } else if (data.type === 'LIMIT') {
-      goalData.monthly_limit = data.monthlyLimit || 1;
+      // LIMIT은 항상 주기 필요 (WEEKLY 또는 MONTHLY)
+      goalData.cycle = data.cycle || 'MONTHLY';
+      goalData.limit_value = data.limitValue || data.monthlyLimit || 1;
+      goalData.monthly_limit = data.limitValue || data.monthlyLimit || 1; // 레거시 호환
     } else if (data.type === 'OBJECTIVE') {
       goalData.target_value = data.targetValue || null;
       goalData.subcategories = data.subcategories || null;

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -21,7 +21,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
-import { GoalType } from "@/types";
+import { GoalType, GoalCycle } from "@/types";
 import { addGoal } from "@/app/actions/goal-actions";
 
 interface AddGoalDialogProps {
@@ -36,17 +36,28 @@ export function AddGoalDialog({ periodId, userId }: AddGoalDialogProps) {
   
   const [title, setTitle] = useState("");
   const [type, setType] = useState<GoalType>("ROUTINE");
+  const [cycle, setCycle] = useState<GoalCycle>("TOTAL");
   const [targetCount, setTargetCount] = useState("");
-  const [monthlyLimit, setMonthlyLimit] = useState("");
+  const [limitValue, setLimitValue] = useState("");
   const [targetValue, setTargetValue] = useState("");
   const [subcategories, setSubcategories] = useState("");
   const [unit, setUnit] = useState("회");
 
+  // 타입 변경 시 기본 주기 설정
+  useEffect(() => {
+    if (type === 'ROUTINE') {
+      setCycle('TOTAL');
+    } else if (type === 'LIMIT') {
+      setCycle('MONTHLY');
+    }
+  }, [type]);
+
   const resetForm = () => {
     setTitle("");
     setType("ROUTINE");
+    setCycle("TOTAL");
     setTargetCount("");
-    setMonthlyLimit("");
+    setLimitValue("");
     setTargetValue("");
     setSubcategories("");
     setUnit("회");
@@ -63,8 +74,9 @@ export function AddGoalDialog({ periodId, userId }: AddGoalDialogProps) {
         title,
         type,
         unit,
+        cycle,
         targetCount: targetCount ? parseInt(targetCount) : undefined,
-        monthlyLimit: monthlyLimit ? parseInt(monthlyLimit) : undefined,
+        limitValue: limitValue ? parseInt(limitValue) : undefined,
         targetValue: targetValue ? parseInt(targetValue) : undefined,
         subcategories: subcategories.trim() 
           ? subcategories.split(',').map(s => s.trim()).filter(Boolean)
@@ -97,9 +109,25 @@ export function AddGoalDialog({ periodId, userId }: AddGoalDialogProps) {
 
   const getTypeDescription = (t: GoalType) => {
     switch (t) {
-      case 'ROUTINE': return '예: 운동 72회 달성';
-      case 'LIMIT': return '예: 배달음식 월 8회 이하';
+      case 'ROUTINE': return '예: 운동 72회 달성 또는 주 3회';
+      case 'LIMIT': return '예: 배달음식 주/월 N회 이하';
       case 'OBJECTIVE': return '예: 토익 800점 달성';
+    }
+  };
+
+  const getCycleLabel = (c: GoalCycle) => {
+    switch (c) {
+      case 'TOTAL': return '전체 기간';
+      case 'WEEKLY': return '주간';
+      case 'MONTHLY': return '월간';
+    }
+  };
+
+  const getCycleDescription = (c: GoalCycle) => {
+    switch (c) {
+      case 'TOTAL': return '설정 기간 동안 총 N회';
+      case 'WEEKLY': return '매주 N회 반복';
+      case 'MONTHLY': return '매월 N회 반복';
     }
   };
 
@@ -153,57 +181,115 @@ export function AddGoalDialog({ periodId, userId }: AddGoalDialogProps) {
               </DropdownMenu>
             </div>
 
-            {/* 타입별 추가 필드 */}
+            {/* 채우기(ROUTINE) 전용 필드 */}
             {type === 'ROUTINE' && (
-              <div className="grid grid-cols-2 gap-4">
+              <>
+                {/* 주기 선택 */}
                 <div className="space-y-2">
-                  <Label htmlFor="targetCount">목표 횟수</Label>
-                  <Input
-                    id="targetCount"
-                    type="number"
-                    placeholder="72"
-                    value={targetCount}
-                    onChange={(e) => setTargetCount(e.target.value)}
-                    required
-                  />
+                  <Label>반복 주기</Label>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="outline" className="w-full justify-between">
+                        {getCycleLabel(cycle)}
+                        <span>▼</span>
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent className="w-full">
+                      {(['TOTAL', 'WEEKLY', 'MONTHLY'] as GoalCycle[]).map((c) => (
+                        <DropdownMenuItem key={c} onClick={() => setCycle(c)}>
+                          <div>
+                            <p className="font-medium">{getCycleLabel(c)}</p>
+                            <p className="text-xs text-zinc-500">{getCycleDescription(c)}</p>
+                          </div>
+                        </DropdownMenuItem>
+                      ))}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="unit">단위</Label>
-                  <Input
-                    id="unit"
-                    placeholder="회"
-                    value={unit}
-                    onChange={(e) => setUnit(e.target.value)}
-                  />
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="targetCount">
+                      {cycle === 'TOTAL' ? '목표 횟수' : cycle === 'WEEKLY' ? '주간 목표' : '월간 목표'}
+                    </Label>
+                    <Input
+                      id="targetCount"
+                      type="number"
+                      placeholder={cycle === 'TOTAL' ? '72' : cycle === 'WEEKLY' ? '3' : '12'}
+                      value={targetCount}
+                      onChange={(e) => setTargetCount(e.target.value)}
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="unit">단위</Label>
+                    <Input
+                      id="unit"
+                      placeholder="회"
+                      value={unit}
+                      onChange={(e) => setUnit(e.target.value)}
+                    />
+                  </div>
                 </div>
-              </div>
+              </>
             )}
 
+            {/* 아껴쓰기(LIMIT) 전용 필드 */}
             {type === 'LIMIT' && (
-              <div className="grid grid-cols-2 gap-4">
+              <>
+                {/* 주기 선택 */}
                 <div className="space-y-2">
-                  <Label htmlFor="monthlyLimit">월 제한</Label>
-                  <Input
-                    id="monthlyLimit"
-                    type="number"
-                    placeholder="8"
-                    value={monthlyLimit}
-                    onChange={(e) => setMonthlyLimit(e.target.value)}
-                    required
-                  />
+                  <Label>제한 주기</Label>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="outline" className="w-full justify-between">
+                        {getCycleLabel(cycle)}
+                        <span>▼</span>
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent className="w-full">
+                    {(['WEEKLY', 'MONTHLY', 'TOTAL'] as GoalCycle[]).map((c) => (
+                        <DropdownMenuItem key={c} onClick={() => setCycle(c)}>
+                          <div>
+                            <p className="font-medium">{getCycleLabel(c)}</p>
+                            <p className="text-xs text-zinc-500">
+                              {c === 'WEEKLY' ? '매주 N회 이하' : c === 'MONTHLY' ? '매월 N회 이하' : '기간 내 총 N회 이하'}
+                            </p>
+                          </div>
+                        </DropdownMenuItem>
+                      ))}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="unit">단위</Label>
-                  <Input
-                    id="unit"
-                    placeholder="회"
-                    value={unit}
-                    onChange={(e) => setUnit(e.target.value)}
-                  />
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="limitValue">
+                      {cycle === 'WEEKLY' ? '주간 제한' : cycle === 'MONTHLY' ? '월간 제한' : '전체 제한'}
+                    </Label>
+                    <Input
+                      id="limitValue"
+                      type="number"
+                      placeholder={cycle === 'WEEKLY' ? '2' : '8'}
+                      value={limitValue}
+                      onChange={(e) => setLimitValue(e.target.value)}
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="unit">단위</Label>
+                    <Input
+                      id="unit"
+                      placeholder="회"
+                      value={unit}
+                      onChange={(e) => setUnit(e.target.value)}
+                    />
+                  </div>
                 </div>
-              </div>
+              </>
             )}
 
+            {/* 도달하기(OBJECTIVE) 전용 필드 */}
             {type === 'OBJECTIVE' && (
               <>
                 <div className="grid grid-cols-2 gap-4">

@@ -1,5 +1,6 @@
 // Goal 타입 정의
 export type GoalType = 'ROUTINE' | 'LIMIT' | 'OBJECTIVE';
+export type GoalCycle = 'TOTAL' | 'WEEKLY' | 'MONTHLY';
 
 // 데이터베이스 테이블 타입
 export interface User {
@@ -27,12 +28,17 @@ export interface Goal {
   title: string;
   type: GoalType;
   
+  // 주기 설정 (ROUTINE, LIMIT)
+  cycle: GoalCycle;
+  
   // ROUTINE 전용
   target_count: number | null;
   current_count: number;
   
-  // LIMIT 전용
+  // LIMIT 전용 (레거시)
   monthly_limit: number | null;
+  // LIMIT/ROUTINE 주간/월간 제한값
+  limit_value: number | null;
   
   // OBJECTIVE 전용
   subcategories: string[] | null;
