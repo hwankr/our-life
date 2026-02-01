@@ -7,6 +7,7 @@ import { formatDateKorean, getTodayString } from "@/lib/date-utils";
 import { Goal, DailyLog } from "@/types";
 import { GoalCard } from "@/components/goal-card";
 import { AddGoalDialog } from "@/components/add-goal-dialog";
+import { RefreshButton } from "@/components/refresh-button";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { UserMenu } from "@/components/user-menu";
 import { FadeIn, StaggerContainer, StaggerItem } from "@/components/ui/motion-layout";
@@ -146,9 +147,12 @@ export default async function UserDetailPage({ params }: UserDetailPageProps) {
                <Sparkles className="h-5 w-5 text-yellow-500" />
                목표 리스트
             </h2>
-            {isOwnPage && (
-              <AddGoalDialog periodId={periodId} userId={userId} />
-            )}
+            <div className="flex items-center gap-2">
+              <RefreshButton />
+              {isOwnPage && (
+                <AddGoalDialog periodId={periodId} userId={userId} />
+              )}
+            </div>
           </FadeIn>
 
           {(!goals || goals.length === 0) ? (

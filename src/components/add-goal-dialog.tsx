@@ -96,7 +96,8 @@ export function AddGoalDialog({ periodId, userId }: AddGoalDialogProps) {
       toast.success("목표가 추가되었습니다!");
       resetForm();
       setOpen(false);
-      router.refresh();
+      // 하드 리로드로 새 목표 즉시 반영
+      window.location.reload();
     } catch (error: any) {
       console.error("목표 추가 오류:", error);
       toast.error(error.message || "목표 추가에 실패했습니다");
