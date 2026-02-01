@@ -88,6 +88,13 @@
 - Allow decimals for OBJECTIVE goal values
   - goals.target_value/achieved_value -> NUMERIC
   - Goal add/edit input allows decimals
+
+## 2026-02-01 (5)
+
+### 변경
+- 일일 기록에서 OBJECTIVE 목표 공부량 입력 및 누적 표시 추가
+- goals에 study_target/study_unit 컬럼 추가
+- 공부 일수 집계를 위한 study_day_count 추가
 ---
 
 ## 템플릿

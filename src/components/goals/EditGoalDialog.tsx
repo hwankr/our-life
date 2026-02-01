@@ -35,6 +35,8 @@ export function EditGoalDialog({ goal, open, onOpenChange }: EditGoalDialogProps
   const [targetCount, setTargetCount] = useState(goal.target_count?.toString() || "");
   const [monthlyLimit, setMonthlyLimit] = useState(goal.monthly_limit?.toString() || "");
   const [targetValue, setTargetValue] = useState(goal.target_value?.toString() || "");
+  const [studyTarget, setStudyTarget] = useState(goal.study_target?.toString() || "");
+  const [studyUnit, setStudyUnit] = useState(goal.study_unit || "분");
   const [unit, setUnit] = useState(goal.unit || "");
   const [subcategories, setSubcategories] = useState(goal.subcategories?.join(", ") || "");
 
@@ -44,6 +46,8 @@ export function EditGoalDialog({ goal, open, onOpenChange }: EditGoalDialogProps
       setTargetCount(goal.target_count?.toString() || "");
       setMonthlyLimit(goal.monthly_limit?.toString() || "");
       setTargetValue(goal.target_value?.toString() || "");
+      setStudyTarget(goal.study_target?.toString() || "");
+      setStudyUnit(goal.study_unit || "분");
       setUnit(goal.unit || "");
       setSubcategories(goal.subcategories?.join(", ") || "");
     }
@@ -67,6 +71,8 @@ export function EditGoalDialog({ goal, open, onOpenChange }: EditGoalDialogProps
         updateData.monthly_limit = parseInt(monthlyLimit);
       } else if (goal.type === 'OBJECTIVE') {
         updateData.target_value = targetValue.trim() === "" ? null : parseFloat(targetValue);
+        updateData.study_target = studyTarget.trim() === "" ? null : parseInt(studyTarget);
+        updateData.study_unit = studyUnit.trim() === "" ? null : studyUnit.trim();
         updateData.subcategories = subcategories.split(',').map(s => s.trim()).filter(Boolean);
       }
 
@@ -158,6 +164,28 @@ export function EditGoalDialog({ goal, open, onOpenChange }: EditGoalDialogProps
                   onChange={(e) => setTargetValue(e.target.value)}
                   required
                 />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="studyTarget">공부 목표량 (선택)</Label>
+                  <Input
+                    id="studyTarget"
+                    type="number"
+                    min="1"
+                    step="1"
+                    value={studyTarget}
+                    onChange={(e) => setStudyTarget(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="studyUnit">공부 단위</Label>
+                  <Input
+                    id="studyUnit"
+                    value={studyUnit}
+                    onChange={(e) => setStudyUnit(e.target.value)}
+                    placeholder="분"
+                  />
+                </div>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="subcategories">세부 카테고리 (쉼표로 구분)</Label>

@@ -52,6 +52,9 @@ Goal (1) ──< (N) GoalLog
 | is_achieved | BOOLEAN | (OBJECTIVE) 달성 여부 |
 | achieved_value | NUMERIC | (OBJECTIVE) 최종 점수 |
 | target_value | NUMERIC | (OBJECTIVE) 목표 점수 |
+| study_target | INTEGER | (OBJECTIVE) 공부 목표량 |
+| study_unit | TEXT | (OBJECTIVE) 공부 단위 (분/시간/일 등) |
+| study_day_count | INTEGER | (OBJECTIVE) 공부 일수 누적 |
 | unit | TEXT | 단위 (회, 점 등) |
 | created_at | TIMESTAMPTZ | 생성일 |
 
@@ -89,3 +92,5 @@ Goal (1) ──< (N) GoalLog
 |------|-----------|
 | 2026-02-01 | 초기 스키마 설계 |
 | 2026-02-01 | goals.target_value/achieved_value -> NUMERIC (decimals) |
+| 2026-02-01 | goals.study_target/study_unit 추가 (OBJECTIVE 공부 누적) |
+| 2026-02-01 | goals.study_day_count 추가 (OBJECTIVE 공부 일수) |

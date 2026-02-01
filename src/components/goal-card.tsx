@@ -37,6 +37,9 @@ export function GoalCard({ goal, period, isEditable }: GoalCardProps) {
         const routineProgress = ((goal.current_count || 0) / (goal.target_count || 1)) * 100;
         return Math.min(routineProgress, 100);
       case 'OBJECTIVE':
+        if (goal.study_target && goal.study_target > 0) {
+          return Math.min(((goal.current_count || 0) / goal.study_target) * 100, 100);
+        }
         return goal.is_achieved ? 100 : 0;
       case 'LIMIT':
         const limit = goal.limit_value || goal.monthly_limit || 1;
@@ -48,6 +51,15 @@ export function GoalCard({ goal, period, isEditable }: GoalCardProps) {
   };
 
   const progress = getProgress();
+  const studyTarget = goal.study_target || 0;
+  const studyCurrent = goal.current_count || 0;
+  const studyUnit = goal.study_unit || '분';
+  const studyDayCount = goal.study_day_count || 0;
+  const hasStudyTarget = studyTarget > 0;
+  const resultLabel =
+    goal.target_value !== null && goal.target_value !== undefined
+      ? `${goal.target_value}${goal.unit}`
+      : '목표 없음';
 
   // 타입별 스타일 설정
   const getTypeStyle = () => {
@@ -169,12 +181,29 @@ export function GoalCard({ goal, period, isEditable }: GoalCardProps) {
                  </div>
               )}
               {goal.type === 'OBJECTIVE' && (
-                 <div className="flex justify-between items-end mb-2">
-                    <span className="text-zinc-500 dark:text-zinc-400">Target</span>
-                    <span className={cn("font-semibold text-base", goal.is_achieved ? "text-emerald-500" : "text-zinc-900 dark:text-zinc-100")}>
-                       {goal.is_achieved ? 'Achieved!' : `${goal.target_value}${goal.unit}`}
-                    </span>
-                 </div>
+                 <>
+                   <div className="flex justify-between items-end mb-2">
+                      <span className="text-zinc-500 dark:text-zinc-400">결과 목표</span>
+                      <span className={cn("font-semibold text-base", goal.is_achieved ? "text-emerald-500" : "text-zinc-900 dark:text-zinc-100")}>
+                         {goal.is_achieved ? 'Achieved!' : resultLabel}
+                      </span>
+                   </div>
+                   <div className="flex justify-between items-end">
+                      <span className="text-zinc-500 dark:text-zinc-400">공부 누적</span>
+                      <span className="font-semibold text-zinc-900 dark:text-zinc-100 text-base">
+                         {studyCurrent}{studyUnit}
+                         {hasStudyTarget && (
+                           <span className="text-zinc-400 text-sm font-normal">
+                             {' '}/ {studyTarget}{studyUnit}
+                           </span>
+                         )}
+                      </span>
+                   </div>
+                   <div className="flex justify-between items-end mt-1">
+                      <span className="text-zinc-400 text-xs">공부 일수</span>
+                      <span className="text-zinc-500 text-xs">{studyDayCount}일</span>
+                   </div>
+                 </>
               )}
           </div>
 
@@ -229,6 +258,11 @@ export function GoalCard({ goal, period, isEditable }: GoalCardProps) {
              
              {goal.type === 'OBJECTIVE' && (
                <div className="space-y-3">
+                 {hasStudyTarget && (
+                   <div className="relative pt-1">
+                     <Progress value={progress} className="h-2.5 bg-zinc-100 dark:bg-zinc-800" />
+                   </div>
+                 )}
                  {goal.subcategories && goal.subcategories.length > 0 ? (
                    <div className="flex flex-wrap gap-1.5">
                      {goal.subcategories.map((sub: string) => (

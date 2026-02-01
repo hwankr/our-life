@@ -65,6 +65,9 @@ CREATE TABLE IF NOT EXISTS public.goals (
   is_achieved BOOLEAN DEFAULT false,
   achieved_value NUMERIC,
   target_value NUMERIC,
+  study_target INTEGER,
+  study_unit TEXT DEFAULT '분',
+  study_day_count INTEGER DEFAULT 0,
   
   -- 공통
   unit TEXT DEFAULT '회',
@@ -190,7 +193,15 @@ BEGIN
       SELECT COALESCE(SUM(gl.count), 0)
       FROM public.goal_logs gl
       WHERE gl.goal_id = NEW.goal_id
-    )
+    ),
+    study_day_count = CASE
+      WHEN type = 'OBJECTIVE' THEN (
+        SELECT COALESCE(COUNT(*), 0)
+        FROM public.goal_logs gl
+        WHERE gl.goal_id = NEW.goal_id
+      )
+      ELSE study_day_count
+    END
     WHERE id = NEW.goal_id;
     RETURN NEW;
   ELSIF TG_OP = 'DELETE' THEN
@@ -199,7 +210,15 @@ BEGIN
       SELECT COALESCE(SUM(gl.count), 0)
       FROM public.goal_logs gl
       WHERE gl.goal_id = OLD.goal_id
-    )
+    ),
+    study_day_count = CASE
+      WHEN type = 'OBJECTIVE' THEN (
+        SELECT COALESCE(COUNT(*), 0)
+        FROM public.goal_logs gl
+        WHERE gl.goal_id = OLD.goal_id
+      )
+      ELSE study_day_count
+    END
     WHERE id = OLD.goal_id;
     RETURN OLD;
   END IF;

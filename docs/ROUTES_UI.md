@@ -32,7 +32,7 @@
   - `GoalCard` (타입별 UI)
     - ROUTINE: ProgressBar
     - LIMIT: MonthlyGrid (6칸)
-    - OBJECTIVE: StudyLogCount
+    - OBJECTIVE: StudyLogCount + 공부 누적 진행 + 공부 일수 표시
     - OBJECTIVE target value input accepts decimals (e.g., 4.5)
   - `AddGoalButton`
 - `RecentLogs` - 최근 기록 목록
@@ -43,6 +43,7 @@
 - `DiaryEditor`
 - `GoalCheckList`
   - 목표별 체크박스
+  - OBJECTIVE 목표는 오늘 공부량(횟수/시간) 입력 가능
   - SubcategoryCheckboxes (OBJECTIVE)
 - `SaveButton`
 

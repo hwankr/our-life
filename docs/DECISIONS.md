@@ -61,6 +61,16 @@
 - Some objectives (e.g., GPA 4.5) require decimals; integers truncate.
 
 **Alternatives**: Keep INTEGER and round (rejected).
+
+## 2026-02-01: OBJECTIVE 공부 누적 기록
+
+**결정**: OBJECTIVE 목표도 일일 공부량을 기록해 누적하고, 공부 일수도 함께 집계해 표시.
+
+**이유**:
+- 학점은 후행 지표라 과정 지표가 필요
+- goal_logs.count + current_count 캐시를 재사용해 구현/관리 단순화
+
+**대안**: 별도 학습 로그 테이블 도입 (복잡도 증가).
 ---
 
 ## 템플릿

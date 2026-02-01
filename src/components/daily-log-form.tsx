@@ -250,6 +250,22 @@ export function DailyLogForm({
                     </div>
                   )}
 
+                  {/* OBJECTIVE 타입: 공부량 입력 */}
+                  {check?.checked && goal.type === 'OBJECTIVE' && (
+                    <div className="ml-7 flex items-center gap-2">
+                      <Label className="text-sm">오늘 공부량:</Label>
+                      <Input
+                        type="number"
+                        min="1"
+                        step="1"
+                        value={check.count}
+                        onChange={(e) => handleCountChange(goal.id, parseInt(e.target.value) || 1)}
+                        className="w-20"
+                      />
+                      <span className="text-sm text-zinc-500">{goal.study_unit || '분'}</span>
+                    </div>
+                  )}
+
                   {/* OBJECTIVE 타입: 세부 카테고리 */}
                   {check?.checked && goal.type === 'OBJECTIVE' && goal.subcategories && (
                     <div className="ml-7 flex flex-wrap gap-2">

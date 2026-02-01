@@ -45,6 +45,9 @@ export interface Goal {
   is_achieved: boolean;
   achieved_value: number | null;
   target_value: number | null;
+  study_target: number | null;
+  study_unit: string | null;
+  study_day_count: number | null;
   
   // 공통
   unit: string;
@@ -88,6 +91,8 @@ export interface GoalFormData {
   monthly_limit?: number;
   subcategories?: string[];
   target_value?: number;
+  study_target?: number;
+  study_unit?: string;
   unit: string;
 }
 

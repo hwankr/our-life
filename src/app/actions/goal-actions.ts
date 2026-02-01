@@ -16,6 +16,8 @@ interface AddGoalData {
   limitValue?: number;
   monthlyLimit?: number; // 레거시 호환
   targetValue?: number;
+  studyTarget?: number;
+  studyUnit?: string;
   subcategories?: string[];
 }
 
@@ -57,6 +59,8 @@ export async function addGoal(data: AddGoalData): Promise<{ success: boolean; er
       goalData.monthly_limit = data.limitValue || data.monthlyLimit || 1; // 레거시 호환
     } else if (data.type === 'OBJECTIVE') {
       goalData.target_value = data.targetValue || null;
+      goalData.study_target = data.studyTarget || null;
+      goalData.study_unit = data.studyUnit || null;
       goalData.subcategories = data.subcategories || null;
     }
 

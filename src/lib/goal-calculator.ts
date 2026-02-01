@@ -317,19 +317,32 @@ export function calculateObjectiveProgress(
   goalLogs: GoalLog[]
 ): GoalProgress {
   const studyLogCount = goalLogs.reduce((sum, log) => sum + log.count, 0);
+  const studyTarget = goal.study_target || 0;
 
   // 점수 기반 달성률 (달성 시)
   let progressPercent = 0;
-  if (goal.is_achieved && goal.achieved_value && goal.target_value) {
+  let currentValue = 0;
+  let targetValue = 0;
+
+  if (studyTarget > 0) {
+    currentValue = studyLogCount;
+    targetValue = studyTarget;
+    progressPercent = Math.min((studyLogCount / studyTarget) * 100, 100);
+  } else if (goal.is_achieved && goal.achieved_value && goal.target_value) {
+    currentValue = goal.achieved_value;
+    targetValue = goal.target_value;
     progressPercent = Math.min((goal.achieved_value / goal.target_value) * 100, 100);
+  } else {
+    currentValue = studyLogCount;
+    targetValue = 0;
   }
 
   return {
     goal_id: goal.id,
     type: 'OBJECTIVE',
     progress_percent: Math.round(progressPercent * 10) / 10,
-    current_value: goal.achieved_value || 0,
-    target_value: goal.target_value || 0,
+    current_value: currentValue,
+    target_value: targetValue,
     study_log_count: studyLogCount,
   };
 }
