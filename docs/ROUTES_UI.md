@@ -35,6 +35,7 @@
     - OBJECTIVE: StudyLogCount + 공부 누적 진행 + 공부 일수 표시
     - OBJECTIVE target value input accepts decimals (e.g., 4.5)
   - `AddGoalButton`
+    - AddGoalDialog: OBJECTIVE는 목표 점수/단위 + 세부 카테고리만 입력 (공부 목표량 입력 없음)
 - `RecentLogs` - 최근 기록 목록
 - `TodayLogButton`
 

@@ -40,8 +40,6 @@ export function AddGoalDialog({ periodId, userId }: AddGoalDialogProps) {
   const [targetCount, setTargetCount] = useState("");
   const [limitValue, setLimitValue] = useState("");
   const [targetValue, setTargetValue] = useState("");
-  const [studyTarget, setStudyTarget] = useState("");
-  const [studyUnit, setStudyUnit] = useState("분");
   const [subcategories, setSubcategories] = useState("");
   const [unit, setUnit] = useState("회");
 
@@ -61,8 +59,6 @@ export function AddGoalDialog({ periodId, userId }: AddGoalDialogProps) {
     setTargetCount("");
     setLimitValue("");
     setTargetValue("");
-    setStudyTarget("");
-    setStudyUnit("분");
     setSubcategories("");
     setUnit("회");
   };
@@ -82,8 +78,6 @@ export function AddGoalDialog({ periodId, userId }: AddGoalDialogProps) {
         targetCount: targetCount ? parseInt(targetCount) : undefined,
         limitValue: limitValue ? parseInt(limitValue) : undefined,
         targetValue: targetValue.trim() !== "" ? parseFloat(targetValue) : undefined,
-        studyTarget: studyTarget ? parseInt(studyTarget) : undefined,
-        studyUnit: studyUnit.trim() !== "" ? studyUnit.trim() : undefined,
         subcategories: subcategories.trim() 
           ? subcategories.split(',').map(s => s.trim()).filter(Boolean)
           : undefined,
@@ -321,30 +315,6 @@ export function AddGoalDialog({ periodId, userId }: AddGoalDialogProps) {
                     />
                   </div>
                 </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="studyTarget">공부 목표량 (선택)</Label>
-                    <Input
-                      id="studyTarget"
-                      type="number"
-                      min="1"
-                      step="1"
-                      placeholder="90"
-                      value={studyTarget}
-                      onChange={(e) => setStudyTarget(e.target.value)}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="studyUnit">공부 단위</Label>
-                    <Input
-                      id="studyUnit"
-                      placeholder="분"
-                      value={studyUnit}
-                      onChange={(e) => setStudyUnit(e.target.value)}
-                    />
-                  </div>
-                </div>
-                <p className="text-xs text-zinc-500">예: 90분 / 2시간 / 1일</p>
                 <div className="space-y-2">
                   <Label htmlFor="subcategories">세부 카테고리 (선택)</Label>
                   <Input
