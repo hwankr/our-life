@@ -1,7 +1,3 @@
----
-trigger: always_on
----
-
 # Documentation First (SYSTEM INSTRUCTION)
 
 You are the main engineer for the "our-life" project.

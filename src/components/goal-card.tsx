@@ -30,7 +30,7 @@ export function GoalCard({ goal, period, isEditable }: GoalCardProps) {
   const router = useRouter();
   const [editOpen, setEditOpen] = useState(false);
 
-  // 타입별 진행률 계산
+  // LIMIT 타입: 진행률 계산 (Limit 대비 사용량)
   const getProgress = () => {
     switch (goal.type) {
       case 'ROUTINE':
@@ -39,7 +39,9 @@ export function GoalCard({ goal, period, isEditable }: GoalCardProps) {
       case 'OBJECTIVE':
         return goal.is_achieved ? 100 : 0;
       case 'LIMIT':
-        return 50; // 임시 (실제로는 월별 성공률 계산 필요)
+        const limit = goal.limit_value || goal.monthly_limit || 1;
+        const current = goal.current_count || 0;
+        return Math.min((current / limit) * 100, 100);
       default:
         return 0;
     }
@@ -102,47 +104,11 @@ export function GoalCard({ goal, period, isEditable }: GoalCardProps) {
     }
   };
 
-  // LIMIT 타입: 월별 그리드 렌더링
-  const renderMonthlyGrid = () => {
-    const months = getMonthsBetween(period.start_date, period.end_date);
-    const today = new Date();
-    const currentYearMonth = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`;
-
-    return (
-      <div className="flex gap-1 mt-3 overflow-x-auto pb-1 scrollbar-hide">
-        {months.map(({ year, month }) => {
-          const key = `${year}-${String(month).padStart(2, '0')}`;
-          const isPast = key < currentYearMonth;
-          const isCurrent = key === currentYearMonth;
-          
-          // 임시: 실제로는 goal_logs에서 월별 사용량 계산 필요
-          const isSuccess = isPast ? Math.random() > 0.3 : null;
-          
-          return (
-            <div
-              key={key}
-              className={cn(
-                "w-8 h-8 rounded-lg flex items-center justify-center text-xs font-semibold transition-all",
-                isCurrent && "ring-2 ring-offset-2 ring-orange-500 dark:ring-offset-zinc-900",
-                isSuccess === true && "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400",
-                isSuccess === false && "bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400",
-                isSuccess === null && "bg-zinc-100 dark:bg-zinc-800 text-zinc-400"
-              )}
-              title={`${year}년 ${month}월`}
-            >
-              {month}
-            </div>
-          );
-        })}
-      </div>
-    );
-  };
-
   return (
     <>
       <Card className={cn(
          "group relative overflow-hidden transition-all duration-300 hover:shadow-lg hover:-translate-y-1 bg-white dark:bg-zinc-900",
-         "border-l-4",
+         "border-l-4 h-full flex flex-col w-full min-w-0",
          goal.type === 'ROUTINE' && "border-l-blue-500",
          goal.type === 'LIMIT' && "border-l-orange-500",
          goal.type === 'OBJECTIVE' && "border-l-purple-500",
@@ -174,7 +140,7 @@ export function GoalCard({ goal, period, isEditable }: GoalCardProps) {
           <CardTitle className="text-lg font-bold leading-tight">{goal.title}</CardTitle>
         </CardHeader>
         
-        <CardContent className="px-5 pb-5">
+        <CardContent className="px-5 pb-5 flex-1 flex flex-col">
           {/* 상태 표시 */}
           <div className="mb-4 text-sm">
               {goal.type === 'ROUTINE' && (
@@ -187,9 +153,18 @@ export function GoalCard({ goal, period, isEditable }: GoalCardProps) {
               )}
               {goal.type === 'LIMIT' && (
                  <div className="flex justify-between items-end mb-2">
-                    <span className="text-zinc-500 dark:text-zinc-400">Monthly Limit</span>
+                    <span className="text-zinc-500 dark:text-zinc-400">
+                        {new Date().getMonth() + 1}월 {goal.cycle === 'WEEKLY' ? '주간' : '월간'} 현황
+                    </span>
                     <span className="font-semibold text-zinc-900 dark:text-zinc-100 text-base">
-                       {goal.monthly_limit}{goal.unit}
+                       {goal.current_count || 0}
+                       <span className="text-zinc-400 text-sm font-normal">
+                          {' '}/ {goal.limit_value || goal.monthly_limit}{goal.unit}
+                          {/* 남은 횟수 표시 */}
+                          <span className="ml-1.5 text-xs text-zinc-500">
+                             ({Math.max(0, (goal.limit_value || goal.monthly_limit || 0) - (goal.current_count || 0))}회 남음)
+                          </span>
+                       </span>
                     </span>
                  </div>
               )}
@@ -204,14 +179,53 @@ export function GoalCard({ goal, period, isEditable }: GoalCardProps) {
           </div>
 
           {/* 진행률 바 / 그리드 / 태그 */}
-          <div>
+          <div className="mt-auto">
              {goal.type === 'ROUTINE' && (
                <div className="relative pt-1">
                  <Progress value={progress} className="h-2.5 bg-zinc-100 dark:bg-zinc-800" />
                </div>
              )}
              
-             {goal.type === 'LIMIT' && renderMonthlyGrid()}
+             {goal.type === 'LIMIT' && (
+               <div className="relative pt-1">
+                  {(goal.limit_value || goal.monthly_limit || 0) <= 20 ? (
+                    /* Segmented Bar (<= 20) */
+                    <div className="flex gap-0.5 w-full">
+                       {Array.from({ length: (goal.limit_value || goal.monthly_limit || 1) }).map((_, i) => {
+                          const limit = goal.limit_value || goal.monthly_limit || 1;
+                          const current = goal.current_count || 0;
+                          const isFilled = i < current;
+                          const isExceeded = current > limit;
+                          
+                          return (
+                             <div 
+                                key={i}
+                                className={cn(
+                                   "h-2.5 flex-1 rounded-sm transition-all duration-300",
+                                   isFilled 
+                                     ? (isExceeded ? "bg-rose-500" : "bg-orange-500") 
+                                     : "bg-orange-100 dark:bg-orange-900/20"
+                                )}
+                             />
+                          );
+                       })}
+                    </div>
+                  ) : (
+                    /* Continuous Bar (> 20) */
+                    <div className="h-2.5 w-full bg-orange-100 dark:bg-orange-900/20 rounded-full overflow-hidden">
+                      <div 
+                        className={cn(
+                          "h-full transition-all duration-500",
+                          (goal.current_count || 0) > (goal.limit_value || goal.monthly_limit || 0) 
+                            ? "bg-rose-500" 
+                            : "bg-orange-500"
+                        )}
+                        style={{ width: `${progress}%` }}
+                      />
+                    </div>
+                  )}
+               </div>
+             )}
              
              {goal.type === 'OBJECTIVE' && (
                <div className="space-y-3">
