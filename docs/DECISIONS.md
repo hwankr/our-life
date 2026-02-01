@@ -1,4 +1,4 @@
-# 의사결정 로그 (Decisions Log)
+﻿# 의사결정 로그 (Decisions Log)
 
 프로젝트 진행 중 내린 주요 결정사항을 기록합니다.
 
@@ -52,6 +52,15 @@
 - ROUTINE: 하루에 1회만 (UNIQUE 제약)
 - LIMIT: 하루에 여러 번 가능 vs 1회만
 
+
+## 2026-02-01: Objective goal values as decimals
+
+**Decision**: Store goals.target_value and goals.achieved_value as NUMERIC.
+
+**Rationale**:
+- Some objectives (e.g., GPA 4.5) require decimals; integers truncate.
+
+**Alternatives**: Keep INTEGER and round (rejected).
 ---
 
 ## 템플릿

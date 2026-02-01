@@ -63,8 +63,8 @@ CREATE TABLE IF NOT EXISTS public.goals (
   -- OBJECTIVE 전용
   subcategories JSONB,
   is_achieved BOOLEAN DEFAULT false,
-  achieved_value INTEGER,
-  target_value INTEGER,
+  achieved_value NUMERIC,
+  target_value NUMERIC,
   
   -- 공통
   unit TEXT DEFAULT '회',

@@ -1,4 +1,4 @@
-# DB 스키마 문서
+﻿# DB 스키마 문서
 
 ## ERD 개요
 
@@ -50,8 +50,8 @@ Goal (1) ──< (N) GoalLog
 | monthly_limit | INTEGER | (LIMIT) 월 제한 [레거시] |
 | subcategories | JSONB | (OBJECTIVE) 세부 카테고리 |
 | is_achieved | BOOLEAN | (OBJECTIVE) 달성 여부 |
-| achieved_value | INTEGER | (OBJECTIVE) 최종 점수 |
-| target_value | INTEGER | (OBJECTIVE) 목표 점수 |
+| achieved_value | NUMERIC | (OBJECTIVE) 최종 점수 |
+| target_value | NUMERIC | (OBJECTIVE) 목표 점수 |
 | unit | TEXT | 단위 (회, 점 등) |
 | created_at | TIMESTAMPTZ | 생성일 |
 
@@ -88,3 +88,4 @@ Goal (1) ──< (N) GoalLog
 | 날짜 | 변경 내용 |
 |------|-----------|
 | 2026-02-01 | 초기 스키마 설계 |
+| 2026-02-01 | goals.target_value/achieved_value -> NUMERIC (decimals) |

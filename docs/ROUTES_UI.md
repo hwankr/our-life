@@ -33,6 +33,7 @@
     - ROUTINE: ProgressBar
     - LIMIT: MonthlyGrid (6칸)
     - OBJECTIVE: StudyLogCount
+    - OBJECTIVE target value input accepts decimals (e.g., 4.5)
   - `AddGoalButton`
 - `RecentLogs` - 최근 기록 목록
 - `TodayLogButton`

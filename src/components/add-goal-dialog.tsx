@@ -77,7 +77,7 @@ export function AddGoalDialog({ periodId, userId }: AddGoalDialogProps) {
         cycle,
         targetCount: targetCount ? parseInt(targetCount) : undefined,
         limitValue: limitValue ? parseInt(limitValue) : undefined,
-        targetValue: targetValue ? parseInt(targetValue) : undefined,
+        targetValue: targetValue.trim() !== "" ? parseFloat(targetValue) : undefined,
         subcategories: subcategories.trim() 
           ? subcategories.split(',').map(s => s.trim()).filter(Boolean)
           : undefined,
@@ -298,6 +298,7 @@ export function AddGoalDialog({ periodId, userId }: AddGoalDialogProps) {
                     <Input
                       id="targetValue"
                       type="number"
+                      step="any"
                       placeholder="800"
                       value={targetValue}
                       onChange={(e) => setTargetValue(e.target.value)}

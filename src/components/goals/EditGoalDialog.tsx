@@ -66,7 +66,7 @@ export function EditGoalDialog({ goal, open, onOpenChange }: EditGoalDialogProps
       } else if (goal.type === 'LIMIT') {
         updateData.monthly_limit = parseInt(monthlyLimit);
       } else if (goal.type === 'OBJECTIVE') {
-        updateData.target_value = parseInt(targetValue);
+        updateData.target_value = targetValue.trim() === "" ? null : parseFloat(targetValue);
         updateData.subcategories = subcategories.split(',').map(s => s.trim()).filter(Boolean);
       }
 
@@ -153,6 +153,7 @@ export function EditGoalDialog({ goal, open, onOpenChange }: EditGoalDialogProps
                 <Input
                   id="targetValue"
                   type="number"
+                  step="any"
                   value={targetValue}
                   onChange={(e) => setTargetValue(e.target.value)}
                   required

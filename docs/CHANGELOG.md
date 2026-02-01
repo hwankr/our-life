@@ -1,4 +1,4 @@
-# 변경 로그 (Changelog)
+﻿# 변경 로그 (Changelog)
 
 프로젝트 일자별 변경 내역을 기록합니다.
 
@@ -81,6 +81,13 @@
     - 목표(Goal) 수정: 목표 제목, 수치(횟수/목표량) 등 세부 내용 수정
     - 목표 삭제: 더보기 메뉴를 통한 삭제 기능 구현
 
+
+## 2026-02-01 (4)
+
+### Fix
+- Allow decimals for OBJECTIVE goal values
+  - goals.target_value/achieved_value -> NUMERIC
+  - Goal add/edit input allows decimals
 ---
 
 ## 템플릿
