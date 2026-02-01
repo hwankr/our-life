@@ -11,6 +11,7 @@ import { UserMenu } from "@/components/user-menu";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { FadeIn, StaggerContainer, StaggerItem } from "@/components/ui/motion-layout";
 import { EditPeriodDialog } from "@/components/periods/EditPeriodDialog";
+import { PeriodCalendar } from "@/components/periods/PeriodCalendar";
 import { CalendarDays, ArrowRight, ArrowLeft } from "lucide-react";
 
 interface PeriodPageProps {
@@ -48,6 +49,21 @@ export default async function PeriodPage({ params }: PeriodPageProps) {
     .from('goals')
     .select('*')
     .eq('period_id', periodId);
+
+  // 일일 기록 조회 (캘린더용)
+  const { data: dailyLogs } = await supabase
+    .from('daily_logs')
+    .select('*')
+    .eq('period_id', periodId);
+
+  // 목표 기록 조회 (캘린더용)
+  const dailyLogIds = (dailyLogs || []).map(l => l.id);
+  const { data: goalLogs } = dailyLogIds.length > 0
+    ? await supabase
+        .from('goal_logs')
+        .select('*')
+        .in('daily_log_id', dailyLogIds)
+    : { data: [] };
 
   // 참여자별 목표 그룹화
   const goalsByUser = (goals || []).reduce((acc, goal) => {
@@ -109,6 +125,17 @@ export default async function PeriodPage({ params }: PeriodPageProps) {
               </div>
               <Progress value={periodProgress} className="h-3" />
            </section>
+        </FadeIn>
+
+        {/* 캘린더 */}
+        <FadeIn delay={0.1}>
+           <PeriodCalendar
+             period={period}
+             participants={participants || []}
+             dailyLogs={dailyLogs || []}
+             goalLogs={goalLogs || []}
+             goals={goals || []}
+           />
         </FadeIn>
 
         {/* 참여자 카드 목록 */}

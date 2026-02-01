@@ -9,6 +9,20 @@
 ### 수정
 - 기간 생성 기본 날짜가 빈 값으로 저장되던 문제 수정
 
+## 2026-02-01 (2)
+
+### 추가
+- 노션 스타일 캘린더 기능 구현
+  - `PeriodCalendar` 컴포넌트: 월간 캘린더 뷰, 참여자 필터, 이전/다음 월 네비게이션
+  - `DayDetailModal` 컴포넌트: 날짜 클릭 시 일기 + 달성 목표 팝업 표시
+  - Period 페이지에 캘린더 통합 (Progress Bar 아래 메인 위치)
+
+### 변경
+- `middleware.ts` → `proxy.ts`로 마이그레이션 (Next.js 16 신규 규칙)
+- TypeScript null 타입 오류 수정 (`goal.target_count`)
+
+---
+
 ## 2026-02-01
 
 ### 추가

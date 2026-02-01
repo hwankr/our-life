@@ -46,7 +46,7 @@ export default async function Home() {
             
             <FadeIn delay={0.2} className="relative z-10">
               <p className="text-xl text-zinc-600 dark:text-zinc-400 max-w-lg mx-auto leading-relaxed">
-                서로의 하루를 기록하고 6개월 동안의 목표 달성을 함께하세요.
+                서로의 하루를 기록하고 목표 달성을 함께하세요.
                 <br className="hidden sm:block" />
                 작은 성취가 모여 큰 변화를 만듭니다.
               </p>
