@@ -73,6 +73,26 @@
 **대안**: 별도 학습 로그 테이블 도입 (복잡도 증가).
 ---
 
+## 2026-02-01: Standardize date calculations to Asia/Seoul
+
+**Decision**: All date-only calculations and "today" checks use KST (Asia/Seoul) instead of UTC/server local time.
+
+**Rationale**:
+- Avoid off-by-one day issues in UI ("today", "start day") caused by UTC or server timezone
+- Keep weekly/monthly aggregation consistent for Korea-based usage
+
+**Alternative**: Use server local timezone (rejected: varies by environment)
+
+## 2026-02-01: Weekly cycles start on Sunday
+
+**Decision**: Weekly aggregation uses Sunday as the start of the week.
+
+**Rationale**:
+- Matches common calendar expectations in KR
+- Reduces confusion for weekly goals and limits
+
+**Alternative**: ISO week (Monday start) (rejected)
+
 ## 템플릿
 
 ### [날짜]: [결정 제목]

@@ -14,6 +14,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { createClient } from "@/lib/supabase/client";
+import { addMonthsToDateString, getTodayString } from "@/lib/date-utils";
 import { toast } from "sonner";
 import { Plus } from "lucide-react";
 
@@ -29,12 +30,8 @@ export function CreatePeriodModal({ onPeriodCreated, trigger }: CreatePeriodModa
   
   // Form states
   const [title, setTitle] = useState("");
-  const [startDate, setStartDate] = useState(() => new Date().toISOString().split('T')[0]);
-  const [endDate, setEndDate] = useState(() => {
-    const date = new Date();
-    date.setMonth(date.getMonth() + 6);
-    return date.toISOString().split('T')[0];
-  });
+  const [startDate, setStartDate] = useState(() => getTodayString());
+  const [endDate, setEndDate] = useState(() => addMonthsToDateString(getTodayString(), 6));
   const [partnerEmail, setPartnerEmail] = useState("");
 
   const handleSubmit = async (e: React.FormEvent) => {

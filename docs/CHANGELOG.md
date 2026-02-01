@@ -4,6 +4,19 @@
 
 ---
 
+## 2026-02-01 (9)
+
+### Fix
+- Weekly aggregation now starts on Sunday (KST)
+
+
+## 2026-02-01 (8)
+
+### Fix
+- Period progress label distinguishes pre-start vs start day
+- Date-only calculations and "today" checks now use KST (Asia/Seoul)
+
+
 ## 2026-02-01 (7)
 
 ### 변경

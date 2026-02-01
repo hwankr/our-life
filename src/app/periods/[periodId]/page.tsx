@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Progress } from "@/components/ui/progress";
-import { formatDateKorean, formatDDay, getDaysBetween } from "@/lib/date-utils";
+import { formatDateKorean, formatDDay, getDaysBetween, getTodayString } from "@/lib/date-utils";
 import { User, Period, Goal } from "@/types";
 import { UserMenu } from "@/components/user-menu";
 import { ThemeToggle } from "@/components/theme-toggle";
@@ -74,8 +74,11 @@ export default async function PeriodPage({ params }: PeriodPageProps) {
 
   // 전체 진행률 계산
   const totalDays = getDaysBetween(period.start_date, period.end_date);
-  const elapsedDays = getDaysBetween(period.start_date, new Date().toISOString().split('T')[0]);
+  const today = getTodayString();
+  const elapsedDays = getDaysBetween(period.start_date, today);
   const periodProgress = Math.min(Math.max((elapsedDays / totalDays) * 100, 0), 100);
+  const elapsedLabel =
+    elapsedDays < 0 ? '시작 전' : elapsedDays === 0 ? '오늘 시작' : `${elapsedDays}일 지남`;
 
   return (
     <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950 selection:bg-rose-500/20 selection:text-rose-600">
@@ -119,7 +122,7 @@ export default async function PeriodPage({ params }: PeriodPageProps) {
                        {formatDateKorean(period.start_date)} - {formatDateKorean(period.end_date)}
                     </p>
                     <p className="text-xs font-medium text-rose-500">
-                       {elapsedDays > 0 ? `${elapsedDays}일 지남` : '시작 전'} / 총 {totalDays}일 여정
+                       {elapsedLabel} / 총 {totalDays}일 여정
                     </p>
                  </div>
               </div>
@@ -212,7 +215,7 @@ export default async function PeriodPage({ params }: PeriodPageProps) {
                                 </div>
                                 <span className="text-xs text-zinc-500 ml-2 whitespace-nowrap flex-shrink-0 font-medium">
                                   {goal.type === 'ROUTINE' && `${Math.min(goal.current_count || 0, goal.target_count || 1)}/${goal.target_count || 1}`}
-                                  {goal.type === 'LIMIT' && `D-${getDaysBetween(new Date().toISOString(), period.end_date)}`}
+                                  {goal.type === 'LIMIT' && `D-${getDaysBetween(today, period.end_date)}`}
                                   {goal.type === 'OBJECTIVE' && (goal.is_achieved ? 'Success' : 'In Progress')}
                                 </span>
                               </div>

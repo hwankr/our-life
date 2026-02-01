@@ -11,58 +11,68 @@
  * OBJECTIVE: 공부 로그 수 + 달성 여부
  */
 
+import { getTodayString } from '@/lib/date-utils';
 import { Goal, GoalLog, GoalProgress, Period, GoalCycle } from '@/types';
 
 /**
  * 로컬 타임존 기준 날짜 포맷 (YYYY-MM-DD)
  */
-function formatLocalDate(date: Date): string {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
+function parseDateOnly(dateString: string): Date {
+  const [year, month, day] = dateString.split('-').map(Number);
+  return new Date(Date.UTC(year, month - 1, day));
+}
+
+function formatDateUTC(date: Date): string {
+  const year = date.getUTCFullYear();
+  const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+  const day = String(date.getUTCDate()).padStart(2, '0');
   return `${year}-${month}-${day}`;
+}
+
+function getWeekStartDate(dateStr: string): Date {
+  const date = parseDateOnly(dateStr);
+  const dayOfWeek = date.getUTCDay(); // 0 = Sunday
+  date.setUTCDate(date.getUTCDate() - dayOfWeek);
+  return date;
 }
 
 /**
  * 두 날짜 사이의 월 목록 반환
  */
 export function getMonthsBetween(startDate: string, endDate: string): { year: number; month: number }[] {
-  const start = new Date(startDate);
-  const end = new Date(endDate);
+  const start = parseDateOnly(startDate);
+  const end = parseDateOnly(endDate);
   const months: { year: number; month: number }[] = [];
 
-  const current = new Date(start.getFullYear(), start.getMonth(), 1);
-  const endMonth = new Date(end.getFullYear(), end.getMonth(), 1);
+  const current = new Date(Date.UTC(start.getUTCFullYear(), start.getUTCMonth(), 1));
+  const endMonth = new Date(Date.UTC(end.getUTCFullYear(), end.getUTCMonth(), 1));
 
   while (current <= endMonth) {
     months.push({
-      year: current.getFullYear(),
-      month: current.getMonth() + 1, // 1-12
+      year: current.getUTCFullYear(),
+      month: current.getUTCMonth() + 1, // 1-12
     });
-    current.setMonth(current.getMonth() + 1);
+    current.setUTCMonth(current.getUTCMonth() + 1);
   }
 
   return months;
 }
 
 /**
- * 두 날짜 사이의 주 목록 반환 (ISO 주차 기준)
+ * Weeks between dates (Sunday start, key = week start date)
  */
-export function getWeeksBetween(startDate: string, endDate: string): { year: number; week: number }[] {
-  const start = new Date(startDate);
-  const end = new Date(endDate);
-  const weeks: { year: number; week: number }[] = [];
-  
-  // 시작 날짜의 주 월요일로 이동
-  const current = new Date(start);
-  const dayOfWeek = current.getDay();
-  const diff = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
-  current.setDate(current.getDate() + diff);
+export function getWeeksBetween(startDate: string, endDate: string): string[] {
+  const start = parseDateOnly(startDate);
+  const end = parseDateOnly(endDate);
+  const weeks: string[] = [];
+
+  // 시작 날짜의 주 일요일로 이동
+  const current = new Date(start.getTime());
+  current.setUTCDate(current.getUTCDate() - current.getUTCDay());
 
   while (current <= end) {
-    const { year, week } = getISOWeekNumber(current);
-    weeks.push({ year, week });
-    current.setDate(current.getDate() + 7);
+    weeks.push(formatDateUTC(current));
+    current.setUTCDate(current.getUTCDate() + 7);
   }
 
   return weeks;
@@ -72,7 +82,7 @@ export function getWeeksBetween(startDate: string, endDate: string): { year: num
  * ISO 주차 번호 계산 (월요일 시작)
  */
 export function getISOWeekNumber(date: Date): { year: number; week: number } {
-  const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+  const d = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()));
   const dayNum = d.getUTCDay() || 7;
   d.setUTCDate(d.getUTCDate() + 4 - dayNum);
   const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
@@ -81,12 +91,10 @@ export function getISOWeekNumber(date: Date): { year: number; week: number } {
 }
 
 /**
- * 날짜를 주차 키로 변환 (YYYY-WNN)
+ * Convert date to week key (Sunday start, YYYY-MM-DD of week start)
  */
 export function getWeekKey(dateStr: string): string {
-  const date = new Date(dateStr);
-  const { year, week } = getISOWeekNumber(date);
-  return `${year}-W${String(week).padStart(2, '0')}`;
+  return formatDateUTC(getWeekStartDate(dateStr));
 }
 
 /**
@@ -100,14 +108,14 @@ export function getMonthKey(dateStr: string): string {
  * 현재 주차 키 반환
  */
 export function getCurrentWeekKey(): string {
-  return getWeekKey(formatLocalDate(new Date()));
+  return getWeekKey(getTodayString());
 }
 
 /**
  * 현재 월 키 반환
  */
 export function getCurrentMonthKey(): string {
-  return getMonthKey(formatLocalDate(new Date()));
+  return getMonthKey(getTodayString());
 }
 
 /**
@@ -220,7 +228,7 @@ export function calculateLimitProgress(
 ): GoalProgress {
   const cycle = goal.cycle || 'MONTHLY';
   const limitValue = goal.limit_value || goal.monthly_limit || 0;
-  const today = formatLocalDate(new Date());
+  const today = getTodayString();
   
   if (cycle === 'TOTAL') {
     // 전체 기간 제한
@@ -243,12 +251,10 @@ export function calculateLimitProgress(
     const weeks = getWeeksBetween(period.start_date, period.end_date);
     const currentWeekKey = getCurrentWeekKey();
     
-    const weeklyStatus = weeks.map(({ year, week }) => {
-      const key = `${year}-W${String(week).padStart(2, '0')}`;
-      const used = weeklyUsage.get(key) || 0;
+    const weeklyStatus = weeks.map((weekStart) => {
+      const used = weeklyUsage.get(weekStart) || 0;
       return {
-        year,
-        week,
+        week_start: weekStart,
         used,
         limit: limitValue,
         is_success: used <= limitValue,
@@ -257,7 +263,7 @@ export function calculateLimitProgress(
 
     // 현재까지 완료된 주만 카운트
     const completedWeeks = weeklyStatus.filter(
-      (w) => `${w.year}-W${String(w.week).padStart(2, '0')}` <= currentWeekKey
+      (w) => w.week_start <= currentWeekKey
     );
 
     const successCount = completedWeeks.filter((w) => w.is_success).length;
