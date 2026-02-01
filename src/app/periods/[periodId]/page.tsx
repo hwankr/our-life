@@ -184,7 +184,7 @@ export default async function PeriodPage({ params }: PeriodPageProps) {
                                    <span className="truncate font-medium text-zinc-700 dark:text-zinc-300">{goal.title}</span>
                                 </div>
                                 <span className="text-xs text-zinc-500 ml-2 whitespace-nowrap flex-shrink-0 font-medium">
-                                  {goal.type === 'ROUTINE' && `${Math.min(goal.current_count || 0, goal.target_count)}/${goal.target_count}`}
+                                  {goal.type === 'ROUTINE' && `${Math.min(goal.current_count || 0, goal.target_count || 1)}/${goal.target_count || 1}`}
                                   {goal.type === 'LIMIT' && `D-${getDaysBetween(new Date().toISOString(), period.end_date)}`}
                                   {goal.type === 'OBJECTIVE' && (goal.is_achieved ? 'Success' : 'In Progress')}
                                 </span>

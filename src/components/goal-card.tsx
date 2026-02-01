@@ -16,9 +16,9 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { EditGoalDialog } from "@/components/goals/EditGoalDialog";
-import { createClient } from "@/lib/supabase/client";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
+import { deleteGoal } from "@/app/actions/goal-actions";
 
 interface GoalCardProps {
   goal: Goal;
@@ -91,13 +91,14 @@ export function GoalCard({ goal, period, isEditable }: GoalCardProps) {
     if (!confirm("정말 이 목표를 삭제하시겠습니까?")) return;
 
     try {
-      const supabase = createClient();
-      const { error } = await supabase.from('goals').delete().eq('id', goal.id);
-      if (error) throw error;
+      const result = await deleteGoal(goal.id, period.id, goal.user_id);
+      if (!result.success) {
+        throw new Error(result.error || "삭제에 실패했습니다.");
+      }
       toast.success("목표가 삭제되었습니다.");
       router.refresh();
-    } catch (error) {
-      toast.error("삭제에 실패했습니다.");
+    } catch (error: any) {
+      toast.error(error.message || "삭제에 실패했습니다.");
     }
   };
 

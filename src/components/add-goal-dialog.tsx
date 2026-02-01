@@ -20,9 +20,9 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { createClient } from "@/lib/supabase/client";
 import { toast } from "sonner";
 import { GoalType } from "@/types";
+import { addGoal } from "@/app/actions/goal-actions";
 
 interface AddGoalDialogProps {
   periodId: string;
@@ -57,40 +57,31 @@ export function AddGoalDialog({ periodId, userId }: AddGoalDialogProps) {
     setIsLoading(true);
 
     try {
-      const supabase = createClient();
-
-      const goalData: Record<string, unknown> = {
-        period_id: periodId,
-        user_id: userId,
+      const result = await addGoal({
+        periodId,
+        userId,
         title,
         type,
         unit,
-      };
-
-      if (type === 'ROUTINE') {
-        goalData.target_count = parseInt(targetCount) || 1;
-      } else if (type === 'LIMIT') {
-        goalData.monthly_limit = parseInt(monthlyLimit) || 1;
-      } else if (type === 'OBJECTIVE') {
-        goalData.target_value = targetValue ? parseInt(targetValue) : null;
-        goalData.subcategories = subcategories.trim() 
+        targetCount: targetCount ? parseInt(targetCount) : undefined,
+        monthlyLimit: monthlyLimit ? parseInt(monthlyLimit) : undefined,
+        targetValue: targetValue ? parseInt(targetValue) : undefined,
+        subcategories: subcategories.trim() 
           ? subcategories.split(',').map(s => s.trim()).filter(Boolean)
-          : null;
+          : undefined,
+      });
+
+      if (!result.success) {
+        throw new Error(result.error || "목표 추가에 실패했습니다");
       }
-
-      const { error } = await supabase
-        .from('goals')
-        .insert(goalData);
-
-      if (error) throw error;
 
       toast.success("목표가 추가되었습니다!");
       resetForm();
       setOpen(false);
       router.refresh();
-    } catch (error) {
+    } catch (error: any) {
       console.error("목표 추가 오류:", error);
-      toast.error("목표 추가에 실패했습니다");
+      toast.error(error.message || "목표 추가에 실패했습니다");
     } finally {
       setIsLoading(false);
     }
