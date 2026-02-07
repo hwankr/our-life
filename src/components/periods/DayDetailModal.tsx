@@ -8,8 +8,10 @@ import {
 } from '@/components/ui/dialog';
 import { User } from '@/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Check, BookOpen } from 'lucide-react';
-import { formatDateKorean } from '@/lib/date-utils';
+import { Check, BookOpen, PenLine } from 'lucide-react';
+import { formatDateKorean, getTodayString } from '@/lib/date-utils';
+import Link from 'next/link';
+import { Button } from '@/components/ui/button';
 
 interface DailyLogData {
   id: string;
@@ -41,6 +43,8 @@ interface DayDetailModalProps {
   dailyLogs: DailyLogData[];
   goalLogs: GoalLogData[];
   goals: GoalData[];
+  periodId: string;
+  currentUserId: string;
 }
 
 export function DayDetailModal({
@@ -51,6 +55,8 @@ export function DayDetailModal({
   dailyLogs,
   goalLogs,
   goals,
+  periodId,
+  currentUserId,
 }: DayDetailModalProps) {
   // 날짜 포맷팅
   const formatDisplayDate = (dateStr: string) => {
@@ -75,6 +81,10 @@ export function DayDetailModal({
     return participants.find(p => p.id === userId);
   };
 
+  const today = getTodayString();
+  const isPastOrToday = date <= today;
+  const currentUserHasLog = dailyLogs.some(log => log.user_id === currentUserId);
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-lg max-h-[80vh] overflow-y-auto">
@@ -88,6 +98,14 @@ export function DayDetailModal({
           {dailyLogs.length === 0 ? (
             <div className="text-center py-8 text-zinc-500">
               <p>이 날에는 기록이 없습니다.</p>
+              {isPastOrToday && (
+                <Link href={`/periods/${periodId}/users/${currentUserId}/logs/${date}`}>
+                  <Button variant="outline" size="sm" className="mt-4 gap-1">
+                    <PenLine className="h-3.5 w-3.5" />
+                    기록 작성하기
+                  </Button>
+                </Link>
+              )}
             </div>
           ) : (
             dailyLogs.map((log) => {
@@ -100,16 +118,26 @@ export function DayDetailModal({
                   className="space-y-4 p-4 rounded-xl bg-zinc-50 dark:bg-zinc-800/50"
                 >
                   {/* 참여자 정보 */}
-                  <div className="flex items-center gap-3">
-                    <Avatar className="h-8 w-8">
-                      <AvatarImage src={participant?.avatar_url || ''} />
-                      <AvatarFallback className="text-xs">
-                        {participant?.name?.slice(0, 2) || '??'}
-                      </AvatarFallback>
-                    </Avatar>
-                    <span className="font-semibold text-sm">
-                      {participant?.name || '알 수 없음'}
-                    </span>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <Avatar className="h-8 w-8">
+                        <AvatarImage src={participant?.avatar_url || ''} />
+                        <AvatarFallback className="text-xs">
+                          {participant?.name?.slice(0, 2) || '??'}
+                        </AvatarFallback>
+                      </Avatar>
+                      <span className="font-semibold text-sm">
+                        {participant?.name || '알 수 없음'}
+                      </span>
+                    </div>
+                    {log.user_id === currentUserId && isPastOrToday && (
+                      <Link href={`/periods/${periodId}/users/${currentUserId}/logs/${date}`}>
+                        <Button variant="ghost" size="sm" className="text-xs gap-1 text-rose-500 hover:text-rose-600">
+                          <PenLine className="h-3.5 w-3.5" />
+                          수정
+                        </Button>
+                      </Link>
+                    )}
                   </div>
 
                   {/* 일기 내용 */}
@@ -168,6 +196,16 @@ export function DayDetailModal({
                 </div>
               );
             })
+          )}
+          {!currentUserHasLog && isPastOrToday && dailyLogs.length > 0 && (
+            <div className="text-center py-4 border-t border-zinc-200 dark:border-zinc-700">
+              <Link href={`/periods/${periodId}/users/${currentUserId}/logs/${date}`}>
+                <Button variant="outline" size="sm" className="gap-1">
+                  <PenLine className="h-3.5 w-3.5" />
+                  나도 기록 작성하기
+                </Button>
+              </Link>
+            </div>
           )}
         </div>
       </DialogContent>

@@ -165,6 +165,7 @@ export default async function PeriodPage({ params }: PeriodPageProps) {
              dailyLogs={dailyLogs || []}
              goalLogs={goalLogs || []}
              goals={goals || []}
+             currentUserId={authUser.id}
            />
         </FadeIn>
 

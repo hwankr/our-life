@@ -36,6 +36,7 @@ interface PeriodCalendarProps {
   dailyLogs: DailyLogData[];
   goalLogs: GoalLogData[];
   goals: GoalData[];
+  currentUserId: string;
 }
 
 const PARTICIPANT_COLORS = [
@@ -45,12 +46,13 @@ const PARTICIPANT_COLORS = [
   'bg-amber-500',
 ];
 
-export function PeriodCalendar({ 
-  period, 
-  participants, 
-  dailyLogs, 
-  goalLogs, 
-  goals 
+export function PeriodCalendar({
+  period,
+  participants,
+  dailyLogs,
+  goalLogs,
+  goals,
+  currentUserId
 }: PeriodCalendarProps) {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedFilter, setSelectedFilter] = useState<string | null>(null);
@@ -307,9 +309,11 @@ export function PeriodCalendar({
           onClose={() => setIsModalOpen(false)}
           date={selectedDate}
           participants={participants}
-          dailyLogs={getDateDetails(selectedDate)}
+          dailyLogs={dailyLogs.filter(l => l.log_date === selectedDate)}
           goalLogs={goalLogs}
           goals={goals}
+          periodId={period.id}
+          currentUserId={currentUserId}
         />
       )}
     </div>
