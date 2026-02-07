@@ -83,18 +83,6 @@ export interface DailyLogWithGoalLogs extends DailyLog {
   goal_logs?: GoalLog[];
 }
 
-// 폼 타입
-export interface GoalFormData {
-  title: string;
-  type: GoalType;
-  target_count?: number;
-  monthly_limit?: number;
-  subcategories?: string[];
-  target_value?: number;
-  study_target?: number;
-  study_unit?: string;
-  unit: string;
-}
 
 export interface DailyLogFormData {
   diary: string;

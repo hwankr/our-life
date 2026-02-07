@@ -37,7 +37,7 @@ export async function updateSession(request: NextRequest) {
   // 보호된 라우트 체크
   if (
     !user &&
-    request.nextUrl.pathname.startsWith('/app')
+    (request.nextUrl.pathname.startsWith('/app') || request.nextUrl.pathname.startsWith('/periods'))
   ) {
     // 로그인 안 된 사용자가 보호된 페이지 접근 시 리다이렉트
     const url = request.nextUrl.clone();

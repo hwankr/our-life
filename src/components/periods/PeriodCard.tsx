@@ -4,6 +4,8 @@ import Link from "next/link";
 import { format } from "date-fns";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { CalendarDays, Users, ArrowUpRight } from "lucide-react";
 import { motion } from "framer-motion";
 
@@ -18,9 +20,10 @@ interface Period {
 
 interface PeriodCardProps {
   period: Period;
+  participantsMap?: Record<string, { id: string; name: string; avatar_url: string | null }>;
 }
 
-export function PeriodCard({ period }: PeriodCardProps) {
+export function PeriodCard({ period, participantsMap }: PeriodCardProps) {
   const startDate = new Date(period.start_date);
   const endDate = new Date(period.end_date);
   const isExpired = new Date() > endDate;
@@ -57,11 +60,28 @@ export function PeriodCard({ period }: PeriodCardProps) {
             <div className="flex items-center justify-between pt-2">
               <div className="flex items-center gap-2 text-sm text-zinc-600 dark:text-zinc-400">
                 <div className="flex -space-x-2">
-                   {[...Array(period.participant_ids.length)].map((_, i) => (
-                      <div key={i} className="h-6 w-6 rounded-full bg-zinc-200 dark:bg-zinc-700 border-2 border-white dark:border-zinc-900 flex items-center justify-center text-[10px] text-zinc-500">
-                         <span className="sr-only">User {i}</span>
-                      </div>
-                   ))}
+                   {period.participant_ids.map((pid, i) => {
+                      const participant = participantsMap?.[pid];
+                      return (
+                        <TooltipProvider key={pid} delayDuration={300}>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Avatar className="h-6 w-6 border-2 border-white dark:border-zinc-900">
+                                {participant?.avatar_url && (
+                                  <AvatarImage src={participant.avatar_url} />
+                                )}
+                                <AvatarFallback className="bg-zinc-200 dark:bg-zinc-700 text-[10px] text-zinc-500">
+                                  {participant?.name?.charAt(0) || '?'}
+                                </AvatarFallback>
+                              </Avatar>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p className="text-xs">{participant?.name || '알 수 없음'}</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      );
+                   })}
                 </div>
                 <span className="text-xs font-medium pl-1">
                    {period.participant_ids.length}명 참여

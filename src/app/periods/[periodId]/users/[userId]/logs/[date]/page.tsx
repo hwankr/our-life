@@ -1,7 +1,13 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect, notFound } from "next/navigation";
-import Link from "next/link";
+import { ArrowLeft } from "lucide-react";
+import { ThemeToggle } from "@/components/theme-toggle";
+import { UserMenu } from "@/components/user-menu";
+import { FadeIn } from "@/components/ui/motion-layout";
+import { formatDateKorean } from "@/lib/date-utils";
+import { NavigationBlockerProvider, SafeLink } from "@/components/navigation-blocker";
 import { DailyLogForm } from "@/components/daily-log-form";
+import { Breadcrumb } from "@/components/breadcrumb";
 
 interface DailyLogPageProps {
   params: Promise<{ periodId: string; userId: string; date: string }>;
@@ -32,6 +38,13 @@ export default async function DailyLogPage({ params }: DailyLogPageProps) {
     notFound();
   }
 
+  // 사용자 정보 조회
+  const { data: targetUser } = await supabase
+    .from('users')
+    .select('name')
+    .eq('id', userId)
+    .single();
+
   // 사용자의 목표 목록 조회
   const { data: goals } = await supabase
     .from('goals')
@@ -60,33 +73,60 @@ export default async function DailyLogPage({ params }: DailyLogPageProps) {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-zinc-50 to-zinc-100 dark:from-zinc-900 dark:to-zinc-950">
-      {/* 헤더 */}
-      <header className="sticky top-0 z-10 bg-white/80 dark:bg-zinc-900/80 backdrop-blur border-b">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center gap-4">
-            <Link 
-              href={`/periods/${periodId}/users/${userId}`} 
-              className="text-zinc-500 hover:text-zinc-700"
-            >
-              ← 돌아가기
-            </Link>
-            <div className="flex-1" />
-            <h1 className="font-bold">{date}</h1>
+    <NavigationBlockerProvider>
+      <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950 selection:bg-rose-500/20 selection:text-rose-600">
+        <header className="sticky top-0 z-50 w-full border-b border-zinc-200/50 dark:border-zinc-800/50 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md">
+          <div className="container mx-auto flex h-16 max-w-5xl items-center justify-between px-4">
+            <div className="flex items-center gap-4">
+              <SafeLink href={`/periods/${periodId}/users/${userId}`} className="text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-200 transition-colors p-2 -ml-2">
+                <ArrowLeft className="h-5 w-5" />
+              </SafeLink>
+              <div>
+                <h1 className="font-bold text-sm sm:text-base">{formatDateKorean(date)}</h1>
+                <p className="text-xs text-zinc-500 dark:text-zinc-400">{period.title}</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <ThemeToggle />
+              <UserMenu user={authUser} />
+            </div>
+          </div>
+        </header>
+
+        {/* 컨텍스트 바 */}
+        <div className="border-b border-zinc-100 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-900/30">
+          <div className="container mx-auto max-w-5xl px-4 py-2 flex items-center justify-between text-xs text-zinc-500 dark:text-zinc-400">
+            <div className="flex items-center gap-2">
+              <span className="font-medium text-zinc-700 dark:text-zinc-300">{period.title}</span>
+              <span className="text-zinc-300 dark:text-zinc-600">|</span>
+              <span>Day {Math.max(0, Math.ceil((new Date(date).getTime() - new Date(period.start_date).getTime()) / (1000 * 60 * 60 * 24)) + 1)} / {Math.ceil((new Date(period.end_date).getTime() - new Date(period.start_date).getTime()) / (1000 * 60 * 60 * 24))}</span>
+            </div>
+            {dailyLog && (
+              <span className="text-emerald-600 dark:text-emerald-400 font-medium">수정 모드</span>
+            )}
           </div>
         </div>
-      </header>
 
-      <main className="container mx-auto px-4 py-8">
-        <DailyLogForm
-          periodId={periodId}
-          userId={userId}
-          date={date}
-          goals={goals || []}
-          existingLog={dailyLog}
-          existingGoalLogs={goalLogs}
-        />
-      </main>
-    </div>
+        <main className="container mx-auto px-4 max-w-5xl py-8">
+          <Breadcrumb items={[
+            { label: '대시보드', href: '/app' },
+            { label: period.title, href: `/periods/${periodId}` },
+            { label: targetUser?.name || '사용자', href: `/periods/${periodId}/users/${userId}` },
+            { label: formatDateKorean(date), href: `/periods/${periodId}/users/${userId}/logs/${date}` },
+          ]} />
+
+          <FadeIn>
+            <DailyLogForm
+              periodId={periodId}
+              userId={userId}
+              date={date}
+              goals={goals || []}
+              existingLog={dailyLog}
+              existingGoalLogs={goalLogs}
+            />
+          </FadeIn>
+        </main>
+      </div>
+    </NavigationBlockerProvider>
   );
 }

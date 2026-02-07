@@ -9,6 +9,7 @@ import {
 import { User } from '@/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Check, BookOpen } from 'lucide-react';
+import { formatDateKorean } from '@/lib/date-utils';
 
 interface DailyLogData {
   id: string;
@@ -52,10 +53,11 @@ export function DayDetailModal({
   goals,
 }: DayDetailModalProps) {
   // 날짜 포맷팅
-  const formatDate = (dateStr: string) => {
-    const d = new Date(dateStr);
+  const formatDisplayDate = (dateStr: string) => {
+    const [year, month, day] = dateStr.split('-').map(Number);
+    const d = new Date(Date.UTC(year, month - 1, day));
     const days = ['일', '월', '화', '수', '목', '금', '토'];
-    return `${d.getFullYear()}년 ${d.getMonth() + 1}월 ${d.getDate()}일 (${days[d.getDay()]})`;
+    return `${formatDateKorean(dateStr)} (${days[d.getUTCDay()]})`;
   };
 
   // 특정 daily_log_id에 해당하는 goal_logs 가져오기
@@ -78,7 +80,7 @@ export function DayDetailModal({
       <DialogContent className="max-w-lg max-h-[80vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            📅 {formatDate(date)}
+            📅 {formatDisplayDate(date)}
           </DialogTitle>
         </DialogHeader>
 

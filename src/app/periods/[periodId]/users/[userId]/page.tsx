@@ -4,15 +4,16 @@ import Link from "next/link";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { formatDateKorean, getTodayString } from "@/lib/date-utils";
-import { Goal, DailyLog } from "@/types";
+import { Goal, DailyLog, GoalLog } from "@/types";
 import { GoalCard } from "@/components/goal-card";
 import { AddGoalDialog } from "@/components/add-goal-dialog";
 import { RefreshButton } from "@/components/refresh-button";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { UserMenu } from "@/components/user-menu";
 import { FadeIn, StaggerContainer, StaggerItem } from "@/components/ui/motion-layout";
-import { ArrowLeft, PenLine, History, Sparkles } from "lucide-react";
+import { ArrowLeft, PenLine, History, Sparkles, Target } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Breadcrumb } from "@/components/breadcrumb";
 
 interface UserDetailPageProps {
   params: Promise<{ periodId: string; userId: string }>;
@@ -50,21 +51,58 @@ export default async function UserDetailPage({ params }: UserDetailPageProps) {
   }
 
   // 목표 목록 조회
-  const { data: goals } = await supabase
+  const { data: goals, error: goalsError } = await supabase
     .from('goals')
     .select('*')
     .eq('period_id', periodId)
     .eq('user_id', userId)
     .order('created_at', { ascending: true });
 
+  if (goalsError) {
+    console.error('Failed to fetch goals:', goalsError);
+  }
+
   // 최근 일일 기록 조회
-  const { data: recentLogs } = await supabase
+  const { data: recentLogs, error: recentLogsError } = await supabase
     .from('daily_logs')
     .select('*')
     .eq('period_id', periodId)
     .eq('user_id', userId)
     .order('log_date', { ascending: false })
     .limit(5);
+
+  if (recentLogsError) {
+    console.error('Failed to fetch recent logs:', recentLogsError);
+  }
+
+  // 모든 일일 기록 조회 (goal_logs용)
+  const { data: allDailyLogs } = await supabase
+    .from('daily_logs')
+    .select('id, log_date')
+    .eq('period_id', periodId)
+    .eq('user_id', userId);
+
+  // goal_logs 조회
+  const dailyLogIds = (allDailyLogs || []).map(l => l.id);
+  const { data: goalLogs } = dailyLogIds.length > 0
+    ? await supabase
+        .from('goal_logs')
+        .select('*')
+        .in('daily_log_id', dailyLogIds)
+    : { data: [] };
+
+  // logDateMap 구성 (Record로 직렬화 가능하게)
+  const logDateMap: Record<string, string> = {};
+  (allDailyLogs || []).forEach(log => {
+    logDateMap[log.id] = log.log_date;
+  });
+
+  // goalLogs를 goal_id별로 그룹화
+  const goalLogsByGoalId: Record<string, any[]> = {};
+  (goalLogs || []).forEach(gl => {
+    if (!goalLogsByGoalId[gl.goal_id]) goalLogsByGoalId[gl.goal_id] = [];
+    goalLogsByGoalId[gl.goal_id].push(gl);
+  });
 
   // 오늘 기록이 있는지 확인
   const today = getTodayString();
@@ -79,7 +117,7 @@ export default async function UserDetailPage({ params }: UserDetailPageProps) {
       <header className="sticky top-0 z-50 w-full border-b border-zinc-200/50 dark:border-zinc-800/50 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md">
         <div className="container mx-auto px-4 h-16 max-w-5xl flex items-center justify-between">
           <div className="flex items-center gap-4">
-             <Link href={`/periods/${periodId}`} className="text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-200 transition-colors">
+             <Link href={`/periods/${periodId}`} className="text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-200 transition-colors p-2 -ml-2">
                <ArrowLeft className="h-5 w-5" />
              </Link>
              <div className="flex items-center gap-3">
@@ -91,13 +129,19 @@ export default async function UserDetailPage({ params }: UserDetailPageProps) {
              </div>
           </div>
           <div className="flex items-center gap-2">
-            <ThemeToggle />
+            <span className="hidden sm:block"><ThemeToggle /></span>
             <UserMenu user={authUser} />
           </div>
         </div>
       </header>
 
       <main className="container mx-auto px-4 max-w-5xl py-8 space-y-8">
+        <Breadcrumb items={[
+          { label: '대시보드', href: '/app' },
+          { label: period.title, href: `/periods/${periodId}` },
+          { label: `${targetUser.name}의 목표`, href: `/periods/${periodId}/users/${userId}` },
+        ]} />
+
         {/* 상단 프로필 및 액션 섹션 */}
         <FadeIn>
            <div className="flex flex-col md:flex-row gap-6 md:items-stretch">
@@ -157,10 +201,16 @@ export default async function UserDetailPage({ params }: UserDetailPageProps) {
 
           {(!goals || goals.length === 0) ? (
             <FadeIn delay={0.3}>
-               <div className="flex flex-col items-center justify-center py-16 text-center border rounded-2xl bg-white dark:bg-zinc-900 border-dashed border-zinc-200 dark:border-zinc-800">
-                 <p className="text-zinc-500 mb-2">아직 등록된 목표가 없습니다.</p>
+               <div className="flex flex-col items-center justify-center py-16 text-center border rounded-2xl bg-white dark:bg-zinc-900/50 border-dashed border-zinc-200 dark:border-zinc-800">
+                 <div className="bg-zinc-100 dark:bg-zinc-800 p-4 rounded-full mb-4">
+                   <Target className="h-6 w-6 text-zinc-400" />
+                 </div>
+                 <h3 className="text-lg font-semibold mb-2 text-zinc-900 dark:text-zinc-100">등록된 목표가 없습니다</h3>
+                 <p className="text-sm text-zinc-500 dark:text-zinc-400 mb-6 max-w-sm leading-relaxed">
+                   {isOwnPage ? "목표를 추가하고 성장을 시작하세요!" : "아직 등록된 목표가 없습니다."}
+                 </p>
                  {isOwnPage && (
-                   <p className="text-sm text-zinc-400">오른쪽 상단의 버튼을 눌러 첫 번째 목표를 추가하세요!</p>
+                   <AddGoalDialog periodId={periodId} userId={userId} />
                  )}
                </div>
             </FadeIn>
@@ -168,10 +218,12 @@ export default async function UserDetailPage({ params }: UserDetailPageProps) {
             <StaggerContainer className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {goals.map((goal: Goal) => (
                 <StaggerItem key={goal.id}>
-                  <GoalCard 
-                    goal={goal} 
+                  <GoalCard
+                    goal={goal}
                     period={period}
-                    isEditable={isOwnPage} 
+                    isEditable={isOwnPage}
+                    goalLogs={goalLogsByGoalId[goal.id] || []}
+                    logDateMap={logDateMap}
                   />
                 </StaggerItem>
               ))}
@@ -188,8 +240,19 @@ export default async function UserDetailPage({ params }: UserDetailPageProps) {
               </h2>
               
               {(!recentLogs || recentLogs.length === 0) ? (
-                 <div className="py-12 text-center text-zinc-500 bg-zinc-50 dark:bg-zinc-900/50 rounded-xl border border-zinc-100 dark:border-zinc-800">
-                    <p>아직 작성된 기록이 없습니다.</p>
+                 <div className="flex flex-col items-center justify-center py-16 text-center border rounded-2xl bg-white dark:bg-zinc-900/50 border-dashed border-zinc-200 dark:border-zinc-800">
+                   <div className="bg-zinc-100 dark:bg-zinc-800 p-4 rounded-full mb-4">
+                     <History className="h-6 w-6 text-zinc-400" />
+                   </div>
+                   <h3 className="text-lg font-semibold mb-2 text-zinc-900 dark:text-zinc-100">아직 작성된 기록이 없습니다</h3>
+                   <p className="text-sm text-zinc-500 dark:text-zinc-400 mb-6 max-w-sm leading-relaxed">
+                     매일 기록을 남겨 성장을 추적하세요
+                   </p>
+                   {isOwnPage && (
+                     <Link href={`/periods/${periodId}/users/${userId}/logs/${today}`}>
+                       <Button className="rounded-full">오늘의 기록 작성하기</Button>
+                     </Link>
+                   )}
                  </div>
               ) : (
                  <div className="space-y-3">

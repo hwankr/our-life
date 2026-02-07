@@ -13,11 +13,10 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { createClient } from "@/lib/supabase/client";
 import { toast } from "sonner";
-import { Goal } from "@/types";
-import { MoreHorizontal, SquarePen, Trash2 } from "lucide-react";
+import { Goal, GoalCycle } from "@/types";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { updateGoal } from "@/app/actions/goal-actions";
 
 interface EditGoalDialogProps {
   goal: Goal;
@@ -39,6 +38,8 @@ export function EditGoalDialog({ goal, open, onOpenChange }: EditGoalDialogProps
   const [studyUnit, setStudyUnit] = useState(goal.study_unit || "분");
   const [unit, setUnit] = useState(goal.unit || "");
   const [subcategories, setSubcategories] = useState(goal.subcategories?.join(", ") || "");
+  const [cycle, setCycle] = useState<GoalCycle>(goal.cycle || (goal.type === 'LIMIT' ? 'MONTHLY' : 'TOTAL'));
+  const [limitValue, setLimitValue] = useState(goal.limit_value?.toString() || goal.monthly_limit?.toString() || "");
 
   useEffect(() => {
     if (open) {
@@ -50,6 +51,8 @@ export function EditGoalDialog({ goal, open, onOpenChange }: EditGoalDialogProps
       setStudyUnit(goal.study_unit || "분");
       setUnit(goal.unit || "");
       setSubcategories(goal.subcategories?.join(", ") || "");
+      setCycle(goal.cycle || (goal.type === 'LIMIT' ? 'MONTHLY' : 'TOTAL'));
+      setLimitValue(goal.limit_value?.toString() || goal.monthly_limit?.toString() || "");
     }
   }, [open, goal]);
 
@@ -58,37 +61,31 @@ export function EditGoalDialog({ goal, open, onOpenChange }: EditGoalDialogProps
     setIsLoading(true);
 
     try {
-      const supabase = createClient();
-      
-      const updateData: any = {
+      const result = await updateGoal({
+        goalId: goal.id,
+        periodId: goal.period_id,
         title,
         unit,
-      };
+        cycle,
+        targetCount: goal.type === 'ROUTINE' ? parseInt(targetCount) : undefined,
+        limitValue: goal.type === 'LIMIT' ? parseInt(limitValue) : (goal.type === 'ROUTINE' && cycle !== 'TOTAL' ? parseInt(targetCount) : undefined),
+        monthlyLimit: goal.type === 'LIMIT' ? parseInt(limitValue) : undefined,
+        targetValue: goal.type === 'OBJECTIVE' ? (targetValue.trim() === "" ? null : parseFloat(targetValue)) : undefined,
+        studyTarget: goal.type === 'OBJECTIVE' ? (studyTarget.trim() === "" ? null : parseInt(studyTarget)) : undefined,
+        studyUnit: goal.type === 'OBJECTIVE' ? (studyUnit.trim() === "" ? null : studyUnit.trim()) : undefined,
+        subcategories: goal.type === 'OBJECTIVE' ? subcategories.split(',').map(s => s.trim()).filter(Boolean) : undefined,
+      });
 
-      if (goal.type === 'ROUTINE') {
-        updateData.target_count = parseInt(targetCount);
-      } else if (goal.type === 'LIMIT') {
-        updateData.monthly_limit = parseInt(monthlyLimit);
-      } else if (goal.type === 'OBJECTIVE') {
-        updateData.target_value = targetValue.trim() === "" ? null : parseFloat(targetValue);
-        updateData.study_target = studyTarget.trim() === "" ? null : parseInt(studyTarget);
-        updateData.study_unit = studyUnit.trim() === "" ? null : studyUnit.trim();
-        updateData.subcategories = subcategories.split(',').map(s => s.trim()).filter(Boolean);
+      if (!result.success) {
+        throw new Error(result.error || "수정에 실패했습니다.");
       }
-
-      const { error } = await supabase
-        .from('goals')
-        .update(updateData)
-        .eq('id', goal.id);
-
-      if (error) throw error;
 
       toast.success("목표가 수정되었습니다.");
       onOpenChange(false);
       router.refresh();
-    } catch (error) {
+    } catch (error: any) {
       console.error("목표 수정 오류:", error);
-      toast.error("수정에 실패했습니다.");
+      toast.error(error.message || "수정에 실패했습니다.");
     } finally {
       setIsLoading(false);
     }
@@ -127,29 +124,73 @@ export function EditGoalDialog({ goal, open, onOpenChange }: EditGoalDialogProps
           </div>
 
           {goal.type === 'ROUTINE' && (
-            <div className="space-y-2">
-              <Label htmlFor="targetCount">목표 횟수 (총)</Label>
-              <Input
-                id="targetCount"
-                type="number"
-                value={targetCount}
-                onChange={(e) => setTargetCount(e.target.value)}
-                required
-              />
-            </div>
+            <>
+              <div className="space-y-2">
+                <Label>반복 주기</Label>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" className="w-full justify-between">
+                      {cycle === 'TOTAL' ? '전체 기간' : cycle === 'WEEKLY' ? '주간' : '월간'}
+                      <span>▼</span>
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent className="w-full">
+                    {(['TOTAL', 'WEEKLY', 'MONTHLY'] as GoalCycle[]).map((c) => (
+                      <DropdownMenuItem key={c} onClick={() => setCycle(c)}>
+                        {c === 'TOTAL' ? '전체 기간' : c === 'WEEKLY' ? '주간' : '월간'}
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="targetCount">
+                  {cycle === 'TOTAL' ? '목표 횟수 (총)' : cycle === 'WEEKLY' ? '주간 목표' : '월간 목표'}
+                </Label>
+                <Input
+                  id="targetCount"
+                  type="number"
+                  value={targetCount}
+                  onChange={(e) => setTargetCount(e.target.value)}
+                  required
+                />
+              </div>
+            </>
           )}
 
           {goal.type === 'LIMIT' && (
-            <div className="space-y-2">
-              <Label htmlFor="monthlyLimit">월 제한</Label>
-              <Input
-                id="monthlyLimit"
-                type="number"
-                value={monthlyLimit}
-                onChange={(e) => setMonthlyLimit(e.target.value)}
-                required
-              />
-            </div>
+            <>
+              <div className="space-y-2">
+                <Label>제한 주기</Label>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" className="w-full justify-between">
+                      {cycle === 'WEEKLY' ? '주간' : cycle === 'MONTHLY' ? '월간' : '전체 기간'}
+                      <span>▼</span>
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent className="w-full">
+                    {(['WEEKLY', 'MONTHLY', 'TOTAL'] as GoalCycle[]).map((c) => (
+                      <DropdownMenuItem key={c} onClick={() => setCycle(c)}>
+                        {c === 'WEEKLY' ? '주간' : c === 'MONTHLY' ? '월간' : '전체 기간'}
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="limitValue">
+                  {cycle === 'WEEKLY' ? '주간 제한' : cycle === 'MONTHLY' ? '월간 제한' : '전체 제한'}
+                </Label>
+                <Input
+                  id="limitValue"
+                  type="number"
+                  value={limitValue}
+                  onChange={(e) => setLimitValue(e.target.value)}
+                  required
+                />
+              </div>
+            </>
           )}
 
           {goal.type === 'OBJECTIVE' && (

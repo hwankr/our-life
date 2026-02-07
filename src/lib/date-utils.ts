@@ -24,9 +24,16 @@ function formatDateInTimeZone(date: Date, timeZone: string): string {
   return `${year}-${month}-${day}`;
 }
 
-function parseDateOnly(dateString: string): Date {
+export function parseDateOnly(dateString: string): Date {
   const [year, month, day] = dateString.split('-').map(Number);
   return new Date(Date.UTC(year, month - 1, day));
+}
+
+export function formatDateUTC(date: Date): string {
+  const year = date.getUTCFullYear();
+  const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+  const day = String(date.getUTCDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
 }
 
 /**
@@ -106,7 +113,7 @@ export function getMonthsBetween(startDate: string, endDate: string): { year: nu
 }
 
 /**
- * ???좎쭨???붽컙 ?섏쓽
+ * 날짜에 월을 더한 문자열 반환
  */
 export function addMonthsToDateString(dateString: string, monthsToAdd: number): string {
   const date = parseDateOnly(dateString);

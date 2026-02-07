@@ -24,6 +24,18 @@ export default async function AppPage() {
     .order('is_active', { ascending: false })
     .order('created_at', { ascending: false });
 
+  // Fetch all participants for the periods
+  const allParticipantIds = [...new Set(periods?.flatMap(p => p.participant_ids) || [])];
+  const { data: allParticipants } = allParticipantIds.length > 0
+    ? await supabase
+        .from('users')
+        .select('id, name, avatar_url')
+        .in('id', allParticipantIds)
+    : { data: [] };
+
+  const participantsMap: Record<string, { id: string; name: string; avatar_url: string | null }> = {};
+  (allParticipants || []).forEach(p => { participantsMap[p.id] = p; });
+
   return (
     <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950 selection:bg-rose-500/20 selection:text-rose-600">
       {/* Header */}
@@ -62,7 +74,7 @@ export default async function AppPage() {
           <StaggerContainer className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
             {periods.map((period) => (
               <StaggerItem key={period.id}>
-                <PeriodCard period={period} />
+                <PeriodCard period={period} participantsMap={participantsMap} />
               </StaggerItem>
             ))}
           </StaggerContainer>

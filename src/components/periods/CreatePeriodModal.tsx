@@ -13,7 +13,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { createClient } from "@/lib/supabase/client";
+import { createPeriod } from "@/app/actions/period-actions";
 import { addMonthsToDateString, getTodayString } from "@/lib/date-utils";
 import { toast } from "sonner";
 import { Plus } from "lucide-react";
@@ -39,67 +39,33 @@ export function CreatePeriodModal({ onPeriodCreated, trigger }: CreatePeriodModa
     setIsLoading(true);
 
     try {
-      const supabase = createClient();
-      const { data: { user } } = await supabase.auth.getUser();
+      const result = await createPeriod({
+        title,
+        startDate,
+        endDate,
+        partnerEmail: partnerEmail.trim() || undefined,
+      });
 
-      if (!user) {
-        toast.error("로그인이 필요합니다");
+      if (!result.success) {
+        toast.error(result.error || "기간 생성에 실패했습니다");
+        setIsLoading(false);
         return;
       }
 
-      // 파트너 이메일로 사용자 찾기 (선택적)
-      let participantIds = [user.id];
-      
-      if (partnerEmail.trim()) {
-        const { data: partnerUser } = await supabase
-          .from('users')
-          .select('id')
-          .eq('email', partnerEmail.trim())
-          .single();
-
-        if (partnerUser) {
-          participantIds.push(partnerUser.id);
-        } else {
-          toast.error("파트너를 찾을 수 없습니다. 먼저 파트너가 가입해야 합니다.");
-          setIsLoading(false);
-          return;
-        }
-      }
-
-      // 기존 활성 기간 비활성화 (선택 사항: 여러 기간 활성화가 가능하다면 주석 처리)
-      // 여기서는 규칙상 '활성 기간' 개념이 있으므로 기존 것들은 비활성화 처리
-      await supabase
-        .from('periods')
-        .update({ is_active: false })
-        .contains('participant_ids', [user.id]);
-
-      // 새 기간 생성
-      const { data: newPeriod, error } = await supabase
-        .from('periods')
-        .insert({
-          title: title || `${new Date().getFullYear()}년 목표`,
-          start_date: startDate,
-          end_date: endDate,
-          is_active: true,
-          participant_ids: participantIds,
-        })
-        .select()
-        .single();
-
-      if (error) throw error;
-
       toast.success("새로운 기간이 생성되었습니다!");
       setOpen(false);
-      
+
       // 상태 초기화
       setTitle("");
       setPartnerEmail("");
-      
+
       if (onPeriodCreated) {
         onPeriodCreated();
       } else {
-        router.refresh(); // 기본 동작: 페이지 새로고침
-        router.push(`/periods/${newPeriod.id}`);
+        router.refresh();
+        if (result.periodId) {
+          router.push(`/periods/${result.periodId}`);
+        }
       }
     } catch (error) {
       console.error("기간 생성 오류:", error);

@@ -11,51 +11,19 @@
  * OBJECTIVE: 공부 로그 수 + 달성 여부
  */
 
-import { getTodayString } from '@/lib/date-utils';
+import { getTodayString, parseDateOnly, formatDateUTC, getMonthsBetween } from '@/lib/date-utils';
 import { Goal, GoalLog, GoalProgress, Period, GoalCycle } from '@/types';
+
+export { getMonthsBetween } from '@/lib/date-utils';
 
 /**
  * 로컬 타임존 기준 날짜 포맷 (YYYY-MM-DD)
  */
-function parseDateOnly(dateString: string): Date {
-  const [year, month, day] = dateString.split('-').map(Number);
-  return new Date(Date.UTC(year, month - 1, day));
-}
-
-function formatDateUTC(date: Date): string {
-  const year = date.getUTCFullYear();
-  const month = String(date.getUTCMonth() + 1).padStart(2, '0');
-  const day = String(date.getUTCDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
-}
-
 function getWeekStartDate(dateStr: string): Date {
   const date = parseDateOnly(dateStr);
   const dayOfWeek = date.getUTCDay(); // 0 = Sunday
   date.setUTCDate(date.getUTCDate() - dayOfWeek);
   return date;
-}
-
-/**
- * 두 날짜 사이의 월 목록 반환
- */
-export function getMonthsBetween(startDate: string, endDate: string): { year: number; month: number }[] {
-  const start = parseDateOnly(startDate);
-  const end = parseDateOnly(endDate);
-  const months: { year: number; month: number }[] = [];
-
-  const current = new Date(Date.UTC(start.getUTCFullYear(), start.getUTCMonth(), 1));
-  const endMonth = new Date(Date.UTC(end.getUTCFullYear(), end.getUTCMonth(), 1));
-
-  while (current <= endMonth) {
-    months.push({
-      year: current.getUTCFullYear(),
-      month: current.getUTCMonth() + 1, // 1-12
-    });
-    current.setUTCMonth(current.getUTCMonth() + 1);
-  }
-
-  return months;
 }
 
 /**
@@ -129,8 +97,8 @@ export function calculateRoutineProgress(
   const cycle = goal.cycle || 'TOTAL';
   
   if (cycle === 'TOTAL') {
-    // 전체 기간 목표
-    const currentCount = goal.current_count || 0;
+    // 전체 기간 목표 - goalLogs에서 실제 횟수 합산
+    const currentCount = (goalLogs || []).reduce((sum, gl) => sum + (gl.count || 0), 0);
     const targetCount = goal.target_count || 1;
     const progressPercent = Math.min((currentCount / targetCount) * 100, 100);
 

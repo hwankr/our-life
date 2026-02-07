@@ -13,11 +13,10 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { createClient } from "@/lib/supabase/client";
 import { toast } from "sonner";
 import { Settings, UserPlus } from "lucide-react";
 import { Period } from "@/types";
-import { deletePeriod } from "@/app/actions/period-actions";
+import { updatePeriod, deletePeriod } from "@/app/actions/period-actions";
 
 interface EditPeriodDialogProps {
   period: Period;
@@ -49,44 +48,19 @@ export function EditPeriodDialog({ period, trigger }: EditPeriodDialogProps) {
     setIsLoading(true);
 
     try {
-      const supabase = createClient();
-      
-      // 파트너 추가 로직
-      let updatedParticipantIds = [...period.participant_ids];
-      
-      if (partnerEmail.trim()) {
-        const { data: partnerUser } = await supabase
-          .from('users')
-          .select('id')
-          .eq('email', partnerEmail.trim())
-          .single();
+      const result = await updatePeriod({
+        periodId: period.id,
+        title,
+        startDate,
+        endDate,
+        partnerEmail: partnerEmail.trim() || undefined,
+      });
 
-        if (partnerUser) {
-          if (!updatedParticipantIds.includes(partnerUser.id)) {
-            updatedParticipantIds.push(partnerUser.id);
-            toast.success("새로운 파트너가 목록에 추가됩니다.");
-          } else {
-            toast.info("이미 참여 중인 파트너입니다.");
-          }
-        } else {
-          toast.error("파트너를 찾을 수 없습니다. (이메일을 확인해주세요)");
-          setIsLoading(false);
-          return;
-        }
+      if (!result.success) {
+        toast.error(result.error || "수정에 실패했습니다.");
+        setIsLoading(false);
+        return;
       }
-
-      // 기간 정보 업데이트
-      const { error } = await supabase
-        .from('periods')
-        .update({
-          title,
-          start_date: startDate,
-          end_date: endDate,
-          participant_ids: updatedParticipantIds
-        })
-        .eq('id', period.id);
-
-      if (error) throw error;
 
       toast.success("기간 정보가 수정되었습니다.");
       setOpen(false);
