@@ -165,16 +165,23 @@ export function PeriodCalendar({
   const today = getTodayString();
 
   return (
-    <div className="bg-white dark:bg-zinc-900 rounded-2xl p-6 shadow-sm border border-zinc-200 dark:border-zinc-800">
+    <div className="bg-white dark:bg-zinc-900 rounded-2xl p-6 shadow-sm border border-zinc-200 dark:border-zinc-800 relative overflow-hidden">
+      {/* Gradient accent at top */}
+      <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-rose-500 via-orange-500 to-rose-500" />
+
       {/* 헤더: 필터 + 월 네비게이션 */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 mt-2">
         {/* 참여자 필터 */}
         <div className="flex gap-2 overflow-x-auto flex-nowrap pb-1">
           <Button
             variant={selectedFilter === null ? 'default' : 'outline'}
             size="sm"
             onClick={() => setSelectedFilter(null)}
-            className="text-xs"
+            className={`text-xs rounded-full transition-all ${
+              selectedFilter === null
+                ? 'bg-gradient-to-r from-rose-500 to-orange-500 hover:from-rose-600 hover:to-orange-600'
+                : ''
+            }`}
           >
             전체
           </Button>
@@ -184,9 +191,13 @@ export function PeriodCalendar({
               variant={selectedFilter === p.id ? 'default' : 'outline'}
               size="sm"
               onClick={() => setSelectedFilter(p.id)}
-              className="text-xs gap-1"
+              className={`text-xs gap-1.5 rounded-full transition-all ${
+                selectedFilter === p.id
+                  ? 'bg-gradient-to-r from-rose-500 to-orange-500 hover:from-rose-600 hover:to-orange-600'
+                  : ''
+              }`}
             >
-              <span className={`w-2 h-2 rounded-full ${PARTICIPANT_COLORS[idx % PARTICIPANT_COLORS.length]}`} />
+              <span className={`w-2.5 h-2.5 rounded-full ${PARTICIPANT_COLORS[idx % PARTICIPANT_COLORS.length]}`} />
               {p.name}
             </Button>
           ))}
@@ -194,13 +205,23 @@ export function PeriodCalendar({
 
         {/* 월 네비게이션 */}
         <div className="flex items-center gap-2">
-          <Button variant="ghost" size="icon" onClick={goToPrevMonth}>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={goToPrevMonth}
+            className="rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:scale-110 transition-all"
+          >
             <ChevronLeft className="h-4 w-4" />
           </Button>
-          <span className="text-sm font-semibold min-w-[100px] text-center">
+          <span className="text-sm font-bold min-w-[100px] text-center px-4 py-1.5 rounded-full bg-zinc-100 dark:bg-zinc-800">
             {currentDate.getFullYear()}년 {currentDate.getMonth() + 1}월
           </span>
-          <Button variant="ghost" size="icon" onClick={goToNextMonth}>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={goToNextMonth}
+            className="rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:scale-110 transition-all"
+          >
             <ChevronRight className="h-4 w-4" />
           </Button>
         </div>
@@ -213,9 +234,9 @@ export function PeriodCalendar({
           .map((p, idx) => {
             const colorIdx = participants.findIndex(pp => pp.id === p.id);
             return (
-              <div key={p.id} className="flex items-center gap-1.5">
-                <span className={`w-2.5 h-2.5 rounded-full ${PARTICIPANT_COLORS[colorIdx % PARTICIPANT_COLORS.length]}`} />
-                <span>{p.name}</span>
+              <div key={p.id} className="flex items-center gap-2">
+                <span className={`w-3 h-3 rounded-full ${PARTICIPANT_COLORS[colorIdx % PARTICIPANT_COLORS.length]}`} />
+                <span className="font-medium">{p.name}</span>
               </div>
             );
           })
@@ -223,12 +244,12 @@ export function PeriodCalendar({
       </div>
 
       {/* 요일 헤더 */}
-      <div className="grid grid-cols-7 gap-0.5 sm:gap-1 mb-2">
+      <div className="grid grid-cols-7 gap-0.5 sm:gap-1 mb-2 bg-zinc-50 dark:bg-zinc-800/30 rounded-lg p-1">
         {['일', '월', '화', '수', '목', '금', '토'].map((day, idx) => (
-          <div 
-            key={day} 
-            className={`text-center text-xs font-medium py-2 ${
-              idx === 0 ? 'text-rose-500' : idx === 6 ? 'text-blue-500' : 'text-zinc-500'
+          <div
+            key={day}
+            className={`text-center text-xs font-bold py-2 ${
+              idx === 0 ? 'text-rose-500' : idx === 6 ? 'text-blue-500' : 'text-zinc-600 dark:text-zinc-400'
             }`}
           >
             {day}
@@ -248,6 +269,8 @@ export function PeriodCalendar({
           const inPeriod = isInPeriod(date);
           const logs = getFilteredLogs(dateStr);
           const dayOfWeek = date.getDay();
+          const allLogged = inPeriod && isAllLogged(dateStr);
+          const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
 
           return (
             <TooltipProvider key={dateStr} delayDuration={300}>
@@ -260,14 +283,22 @@ export function PeriodCalendar({
                       aspect-square rounded-lg p-0.5 sm:p-1 min-h-[44px] flex flex-col items-center justify-start gap-1
                       transition-all duration-200
                       ${inPeriod
-                        ? 'hover:bg-zinc-100 dark:hover:bg-zinc-800 cursor-pointer'
+                        ? 'hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:scale-105 cursor-pointer'
                         : 'opacity-30 cursor-not-allowed'
                       }
-                      ${isToday ? 'ring-2 ring-rose-500 ring-offset-2 dark:ring-offset-zinc-900' : ''}
-                      ${inPeriod && isAllLogged(dateStr) ? 'bg-emerald-50 dark:bg-emerald-900/10' : ''}
+                      ${isToday ? 'ring-2 ring-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.3)] dark:shadow-[0_0_12px_rgba(244,63,94,0.4)]' : ''}
+                      ${allLogged ? 'bg-emerald-50 dark:bg-emerald-900/20 relative' : ''}
+                      ${isWeekend && inPeriod && !allLogged ? 'bg-zinc-50/50 dark:bg-zinc-800/20' : ''}
                     `}
                   >
-                    <span className={`text-xs sm:text-sm font-medium ${
+                    {/* All logged checkmark */}
+                    {allLogged && (
+                      <div className="absolute top-0.5 right-0.5 w-3.5 h-3.5 rounded-full bg-emerald-500 flex items-center justify-center">
+                        <span className="text-white text-[8px] font-bold">✓</span>
+                      </div>
+                    )}
+
+                    <span className={`text-xs sm:text-sm font-semibold ${
                       dayOfWeek === 0 ? 'text-rose-500' :
                       dayOfWeek === 6 ? 'text-blue-500' :
                       'text-zinc-700 dark:text-zinc-300'
@@ -283,7 +314,7 @@ export function PeriodCalendar({
                           return (
                             <span
                               key={i}
-                              className={`w-2 h-2 sm:w-1.5 sm:h-1.5 rounded-full ${PARTICIPANT_COLORS[participantIdx % PARTICIPANT_COLORS.length]}`}
+                              className={`w-2 h-2 sm:w-1.5 sm:h-1.5 rounded-full ${PARTICIPANT_COLORS[participantIdx % PARTICIPANT_COLORS.length]} shadow-sm`}
                             />
                           );
                         })}

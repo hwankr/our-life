@@ -133,27 +133,53 @@ export default async function PeriodPage({ params }: PeriodPageProps) {
 
         {/* 기간 요약 및 진행률 */}
         <FadeIn>
-           <section className="bg-white dark:bg-zinc-900 rounded-2xl p-6 shadow-sm border border-zinc-200 dark:border-zinc-800">
-              <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-6">
-                 <div>
-                    <h2 className="text-sm font-semibold text-zinc-500 uppercase tracking-wider mb-1">기간 진행률</h2>
-                    <div className="flex items-center gap-2">
-                       <CalendarDays className="h-5 w-5 text-zinc-400" />
-                       <span className="text-2xl font-bold font-mono">
-                          {Math.round(periodProgress)}%
+           <section className="bg-gradient-to-br from-white to-rose-50/30 dark:from-zinc-900 dark:to-rose-950/10 rounded-2xl p-6 shadow-sm border border-zinc-200 dark:border-zinc-800 relative overflow-hidden">
+              {/* Decorative background orbs */}
+              <div className="absolute -top-10 -right-10 w-40 h-40 bg-rose-500/5 rounded-full blur-3xl" />
+              <div className="absolute -bottom-10 -left-10 w-40 h-40 bg-orange-500/5 rounded-full blur-3xl" />
+
+              <div className="relative">
+                 <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-6">
+                    <div>
+                       <h2 className="text-sm font-semibold text-zinc-500 uppercase tracking-wider mb-2">기간 진행률</h2>
+                       <div className="flex items-center gap-3">
+                          <CalendarDays className="h-6 w-6 text-rose-400" />
+                          <span className="text-3xl font-bold font-mono text-transparent bg-clip-text bg-gradient-to-r from-rose-500 to-orange-500">
+                             {Math.round(periodProgress)}%
+                          </span>
+                       </div>
+                    </div>
+                    <div className="text-right">
+                       <p className="text-sm text-zinc-500 dark:text-zinc-400 mb-1">
+                          {formatDateKorean(period.start_date)} - {formatDateKorean(period.end_date)}
+                       </p>
+                       <p className="text-xs font-medium text-rose-500">
+                          {elapsedLabel} / 총 {totalDays}일 여정
+                       </p>
+                    </div>
+                 </div>
+
+                 {/* Stat Pills */}
+                 <div className="flex flex-wrap gap-2 mb-4">
+                    <div className="px-3 py-1.5 rounded-full bg-white/60 dark:bg-zinc-800/60 backdrop-blur-sm border border-zinc-200/50 dark:border-zinc-700/50">
+                       <span className="text-xs font-medium text-zinc-600 dark:text-zinc-400">
+                          경과 <span className="text-zinc-900 dark:text-zinc-100 font-bold">{Math.max(0, elapsedDays)}</span>일
+                       </span>
+                    </div>
+                    <div className="px-3 py-1.5 rounded-full bg-white/60 dark:bg-zinc-800/60 backdrop-blur-sm border border-zinc-200/50 dark:border-zinc-700/50">
+                       <span className="text-xs font-medium text-zinc-600 dark:text-zinc-400">
+                          남은 <span className="text-zinc-900 dark:text-zinc-100 font-bold">{Math.max(0, totalDays - elapsedDays)}</span>일
+                       </span>
+                    </div>
+                    <div className="px-3 py-1.5 rounded-full bg-gradient-to-r from-rose-500/10 to-orange-500/10 border border-rose-500/20">
+                       <span className="text-xs font-medium text-rose-600 dark:text-rose-400">
+                          완료율 <span className="font-bold">{Math.round(periodProgress)}%</span>
                        </span>
                     </div>
                  </div>
-                 <div className="text-right">
-                    <p className="text-sm text-zinc-500 dark:text-zinc-400 mb-1">
-                       {formatDateKorean(period.start_date)} - {formatDateKorean(period.end_date)}
-                    </p>
-                    <p className="text-xs font-medium text-rose-500">
-                       {elapsedLabel} / 총 {totalDays}일 여정
-                    </p>
-                 </div>
+
+                 <Progress value={periodProgress} className="h-3" indicatorClassName="bg-gradient-to-r from-rose-500 to-orange-500" />
               </div>
-              <Progress value={periodProgress} className="h-3" indicatorClassName="bg-rose-500" />
            </section>
         </FadeIn>
 
@@ -192,22 +218,43 @@ export default async function PeriodPage({ params }: PeriodPageProps) {
                 }, 0) / userGoals.length
               : 0;
 
+            // Achievement-based background tint
+            const achievementTint = avgProgress > 70
+              ? 'bg-gradient-to-br from-emerald-50/30 to-white dark:from-emerald-950/10 dark:to-zinc-900'
+              : avgProgress > 40
+              ? 'bg-gradient-to-br from-amber-50/30 to-white dark:from-amber-950/10 dark:to-zinc-900'
+              : 'bg-gradient-to-br from-white to-zinc-50/30 dark:from-zinc-900 dark:to-zinc-950/10';
+
+            // Colored ring for avatar based on achievement
+            const ringColor = avgProgress > 70
+              ? 'ring-emerald-500/40'
+              : avgProgress > 40
+              ? 'ring-amber-500/40'
+              : 'ring-rose-500/40';
+
             return (
               <StaggerItem key={participant.id}>
                 <Link href={`/periods/${periodId}/users/${participant.id}`} className="block h-full">
-                  <Card className="h-full hover:-translate-y-1 transition-all duration-300 hover:shadow-xl border-zinc-200 dark:border-zinc-800 bg-white/50 dark:bg-zinc-900/50 backdrop-blur-sm group cursor-pointer overflow-hidden relative">
-                     {/* Hover Accent */}
-                     <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-rose-500 to-orange-500 scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left" />
-                     
-                    <CardHeader className="pb-4">
+                  <Card className={`h-full hover:-translate-y-1 hover:scale-[1.02] transition-all duration-300 hover:shadow-xl border-zinc-200 dark:border-zinc-800 backdrop-blur-sm group cursor-pointer overflow-hidden relative ${achievementTint}`}>
+                     {/* Gradient border on hover */}
+                     <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-rose-500 via-orange-500 to-rose-500 scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left" />
+
+                     {/* Decorative orb */}
+                     <div className="absolute -top-10 -right-10 w-32 h-32 bg-rose-500/5 rounded-full blur-2xl group-hover:bg-rose-500/10 transition-colors duration-500" />
+
+                    <CardHeader className="pb-4 relative">
                       <div className="flex items-center gap-4">
                          <div className="relative">
-                            <Avatar className="h-16 w-16 border-4 border-white dark:border-zinc-950 shadow-sm">
+                            <Avatar className={`h-16 w-16 border-4 border-white dark:border-zinc-950 shadow-md ring-4 ${ringColor} transition-all duration-300 group-hover:ring-8`}>
                               <AvatarImage src={participant.avatar_url || undefined} />
-                              <AvatarFallback className="bg-zinc-100 dark:bg-zinc-800 text-lg font-bold">{participant.name?.charAt(0) || '?'}</AvatarFallback>
+                              <AvatarFallback className="bg-gradient-to-br from-zinc-100 to-zinc-200 dark:from-zinc-800 dark:to-zinc-900 text-lg font-bold">{participant.name?.charAt(0) || '?'}</AvatarFallback>
                             </Avatar>
-                            {/* Status Indicator (Optional) */}
-                            <div className="absolute bottom-0 right-0 h-4 w-4 rounded-full bg-emerald-500 border-2 border-white dark:border-zinc-950" />
+                            {/* Achievement indicator */}
+                            {avgProgress > 70 && (
+                              <div className="absolute bottom-0 right-0 h-5 w-5 rounded-full bg-emerald-500 border-2 border-white dark:border-zinc-950 flex items-center justify-center">
+                                <span className="text-white text-xs">✓</span>
+                              </div>
+                            )}
                          </div>
                         <div className="flex-1 min-w-0">
                           <CardTitle className="text-xl font-bold truncate">{participant.name}</CardTitle>
@@ -215,7 +262,7 @@ export default async function PeriodPage({ params }: PeriodPageProps) {
                              <span className="font-medium text-zinc-900 dark:text-zinc-100">{userGoals.length}</span>개의 목표 도전 중
                           </CardDescription>
                         </div>
-                        <ArrowRight className="h-5 w-5 text-zinc-300 group-hover:text-rose-500 transition-colors" />
+                        <ArrowRight className="h-5 w-5 text-zinc-300 group-hover:text-rose-500 group-hover:translate-x-1 transition-all duration-300" />
                       </div>
                     </CardHeader>
                     
@@ -233,21 +280,21 @@ export default async function PeriodPage({ params }: PeriodPageProps) {
                          <p className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">주요 목표</p>
                          <div className="space-y-2">
                             {userGoals.slice(0, 3).map((goal: Goal) => (
-                              <div key={goal.id} className="flex items-center justify-between text-sm p-2 rounded-md bg-zinc-50 dark:bg-zinc-800/50 group-hover:bg-zinc-100 dark:group-hover:bg-zinc-800 transition-colors">
-                                <div className="flex items-center gap-2 overflow-hidden">
-                                   <div className={`h-1.5 w-1.5 rounded-full flex-shrink-0 ${
-                                      goal.type === 'ROUTINE' ? 'bg-blue-500' : 
+                              <div key={goal.id} className="flex items-center justify-between text-sm px-3 py-2 rounded-full bg-white/60 dark:bg-zinc-800/60 backdrop-blur-sm border border-zinc-200/50 dark:border-zinc-700/50 group-hover:bg-white dark:group-hover:bg-zinc-800 group-hover:border-zinc-300 dark:group-hover:border-zinc-600 transition-all">
+                                <div className="flex items-center gap-2.5 overflow-hidden">
+                                   <div className={`h-2 w-2 rounded-full flex-shrink-0 ${
+                                      goal.type === 'ROUTINE' ? 'bg-blue-500' :
                                       goal.type === 'LIMIT' ? 'bg-orange-500' : 'bg-purple-500'
                                    }`} />
                                    <span className="truncate font-medium text-zinc-700 dark:text-zinc-300">{goal.title}</span>
                                 </div>
-                                <span className="text-xs text-zinc-500 ml-2 whitespace-nowrap flex-shrink-0 font-medium">
+                                <span className="text-xs text-zinc-500 dark:text-zinc-400 ml-2 whitespace-nowrap flex-shrink-0 font-semibold px-2 py-0.5 rounded-full bg-zinc-100 dark:bg-zinc-700/50">
                                   {goal.type === 'ROUTINE' && `${Math.min(
                                     (goalLogsByGoalId[goal.id] || []).reduce((s: number, gl: GoalLog) => s + (gl.count || 0), 0),
                                     goal.target_count || 1
                                   )}/${goal.target_count || 1}`}
                                   {goal.type === 'LIMIT' && `D-${getDaysBetween(today, period.end_date)}`}
-                                  {goal.type === 'OBJECTIVE' && (goal.is_achieved ? '달성' : '진행 중')}
+                                  {goal.type === 'OBJECTIVE' && (goal.is_achieved ? '✓ 달성' : '진행 중')}
                                 </span>
                               </div>
                             ))}

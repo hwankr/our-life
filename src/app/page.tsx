@@ -17,9 +17,18 @@ export default async function Home() {
 
   return (
     <div className="flex min-h-screen flex-col bg-zinc-50 dark:bg-zinc-950 overflow-hidden relative selection:bg-rose-500/20 selection:text-rose-600">
-      {/* Dynamic Background */}
-      <div className="absolute inset-0 -z-10 h-full w-full bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)]"></div>
-      <div className="absolute top-0 z-[-2] h-screen w-screen bg-zinc-50 dark:bg-zinc-950 bg-[radial-gradient(ellipse_80%_80%_at_50%_-20%,rgba(120,119,198,0.3),rgba(255,255,255,0))]" />
+      {/* Animated Gradient Orbs Background */}
+      <div className="absolute inset-0 -z-10 overflow-hidden">
+        {/* Orb 1 - Rose */}
+        <div className="absolute top-0 left-0 w-96 h-96 bg-rose-500/30 dark:bg-rose-500/20 rounded-full blur-3xl animate-float"></div>
+        {/* Orb 2 - Orange */}
+        <div className="absolute top-1/4 right-0 w-[500px] h-[500px] bg-orange-400/25 dark:bg-orange-400/15 rounded-full blur-3xl animate-float-delayed"></div>
+        {/* Orb 3 - Blue */}
+        <div className="absolute bottom-0 left-1/4 w-[450px] h-[450px] bg-blue-500/20 dark:bg-blue-500/15 rounded-full blur-3xl animate-float-slow"></div>
+        {/* Orb 4 - Purple */}
+        <div className="absolute top-1/2 right-1/4 w-80 h-80 bg-purple-500/25 dark:bg-purple-500/15 rounded-full blur-3xl animate-float"></div>
+      </div>
+      <div className="absolute inset-0 -z-10 bg-[linear-gradient(to_right,#80808008_1px,transparent_1px),linear-gradient(to_bottom,#80808008_1px,transparent_1px)] bg-[size:32px_32px]"></div>
 
       <header className="fixed top-0 right-0 p-6 z-50">
         <ThemeToggle />
@@ -31,14 +40,14 @@ export default async function Home() {
           {/* Hero Section */}
           <section className="space-y-6 max-w-2xl">
             <FadeIn delay={0.1}>
-              <div className="flex items-center justify-center gap-2 mb-4">
-                <span className="px-3 py-1 rounded-full bg-zinc-100 dark:bg-zinc-800 text-xs font-medium text-zinc-600 dark:text-zinc-400 border border-zinc-200 dark:border-zinc-700">
-                  v1.0 Now Available
+              <div className="flex items-center justify-center gap-2 mb-6">
+                <span className="px-4 py-1.5 rounded-full bg-gradient-to-r from-rose-500/10 to-orange-500/10 dark:from-rose-500/20 dark:to-orange-500/20 text-sm font-medium text-rose-600 dark:text-rose-400 border border-rose-500/20 dark:border-rose-500/30 backdrop-blur-sm shimmer">
+                  ✨ 친구와 함께 성장하세요
                 </span>
               </div>
-              <h1 className="text-5xl sm:text-7xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50 leading-[1.1]">
-                <span className="block">Grow Together</span>
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-rose-500 to-orange-500">
+              <h1 className="text-6xl sm:text-8xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50 leading-[1.05]">
+                <span className="block mb-2">Grow Together</span>
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-rose-500 via-orange-500 to-amber-500 text-gradient-animate">
                   With Your Friend
                 </span>
               </h1>
@@ -53,10 +62,11 @@ export default async function Home() {
             </FadeIn>
 
             <FadeIn delay={0.3}>
-              <div className="flex flex-col sm:flex-row gap-4 justify-center items-center pt-4">
-                <Link href="/auth/login" className="w-full sm:w-auto">
-                  <Button size="lg" className="w-full sm:w-auto h-12 px-8 text-base rounded-full shadow-lg hover:shadow-xl transition-all hover:scale-105 bg-zinc-900 dark:bg-zinc-50 text-white dark:text-zinc-900 hover:bg-zinc-800 dark:hover:bg-zinc-200 border-none">
-                    Google로 시작하기 <ArrowRight className="ml-2 h-4 w-4" />
+              <div className="flex flex-col sm:flex-row gap-4 justify-center items-center pt-6">
+                <Link href="/auth/login" className="w-full sm:w-auto relative">
+                  <div className="absolute -inset-1 bg-gradient-to-r from-rose-500 to-orange-500 rounded-full blur-lg opacity-30 animate-pulse-glow"></div>
+                  <Button size="lg" className="relative w-full sm:w-auto h-14 px-10 text-base rounded-full shadow-2xl hover:shadow-rose-500/25 transition-all hover:scale-105 bg-gradient-to-r from-rose-500 to-orange-500 hover:from-rose-600 hover:to-orange-600 text-white border-none font-semibold">
+                    Google로 시작하기 <ArrowRight className="ml-2 h-5 w-5" />
                   </Button>
                 </Link>
               </div>
@@ -70,28 +80,35 @@ export default async function Home() {
           <StaggerContainer delay={0.4} className="grid grid-cols-1 sm:grid-cols-3 gap-6 w-full text-left">
             {[
               {
-                icon: <Target className="h-6 w-6 text-rose-500" />,
+                icon: <Target className="h-7 w-7 text-white" />,
                 title: "목표 설정",
-                desc: "운동, 공부, 습관 등 다양한 목표를 설정하고 관리하세요."
+                desc: "운동, 공부, 습관 등 다양한 목표를 설정하고 관리하세요.",
+                gradient: "from-rose-500 to-rose-600",
+                borderGradient: "from-rose-500/50 to-rose-600/50"
               },
               {
-                icon: <NotebookPen className="h-6 w-6 text-orange-500" />,
+                icon: <NotebookPen className="h-7 w-7 text-white" />,
                 title: "일기 기록",
-                desc: "매일의 기록을 남기고 진행 상황을 한눈에 체크하세요."
+                desc: "매일의 기록을 남기고 진행 상황을 한눈에 체크하세요.",
+                gradient: "from-orange-500 to-orange-600",
+                borderGradient: "from-orange-500/50 to-orange-600/50"
               },
               {
-                icon: <Users className="h-6 w-6 text-blue-500" />,
+                icon: <Users className="h-7 w-7 text-white" />,
                 title: "함께 성장",
-                desc: "친구와 서로의 성장을 확인하고 긍정적인 자극을 주고받으세요."
+                desc: "친구와 서로의 성장을 확인하고 긍정적인 자극을 주고받으세요.",
+                gradient: "from-blue-500 to-blue-600",
+                borderGradient: "from-blue-500/50 to-blue-600/50"
               }
             ].map((feature, i) => (
               <StaggerItem key={i}>
-                <Card className="h-full border-zinc-200/60 dark:border-zinc-800/60 bg-white/50 dark:bg-zinc-900/50 backdrop-blur-sm hover:bg-white dark:hover:bg-zinc-900 transition-colors shadow-sm hover:shadow-md">
+                <Card className="group h-full relative border-zinc-200/40 dark:border-zinc-800/40 bg-white/70 dark:bg-zinc-900/70 backdrop-blur-xl hover:bg-white/90 dark:hover:bg-zinc-900/90 transition-all duration-300 shadow-lg hover:shadow-2xl hover:scale-[1.02] overflow-hidden">
+                  <div className={`absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r ${feature.borderGradient}`}></div>
                   <CardHeader>
-                    <div className="p-2 w-fit rounded-lg bg-zinc-100 dark:bg-zinc-800 mb-2">
+                    <div className={`p-3 w-fit rounded-xl bg-gradient-to-br ${feature.gradient} mb-3 shadow-lg group-hover:scale-110 transition-transform duration-300`}>
                        {feature.icon}
                     </div>
-                    <CardTitle className="text-lg font-semibold">{feature.title}</CardTitle>
+                    <CardTitle className="text-xl font-bold">{feature.title}</CardTitle>
                   </CardHeader>
                   <CardContent>
                     <p className="text-sm text-zinc-600 dark:text-zinc-400 leading-relaxed">
@@ -107,7 +124,10 @@ export default async function Home() {
       </main>
       
       <footer className="py-8 text-center text-sm text-zinc-500">
-        <p>© 2026 OurLife. Created with AI.</p>
+        <div className="max-w-4xl mx-auto">
+          <div className="h-px w-full bg-gradient-to-r from-transparent via-zinc-300 dark:via-zinc-700 to-transparent mb-6"></div>
+          <p>© 2026 OurLife. Created with AI.</p>
+        </div>
       </footer>
     </div>
   );
