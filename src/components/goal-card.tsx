@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { Goal, Period, GoalLog, GoalProgress } from "@/types";
-import { getTodayString } from "@/lib/date-utils";
+
 import { cn } from "@/lib/utils";
 import { calculateGoalProgress } from "@/lib/goal-calculator";
 import { Target, TrendingUp, PiggyBank, MoreHorizontal, Pencil, Trash2 } from "lucide-react";
@@ -161,17 +161,17 @@ export function GoalCard({ goal, period, isEditable, goalLogs, logDateMap }: Goa
               {goal.type === 'LIMIT' && (
                  <div className="flex justify-between items-end pb-3 border-b border-zinc-100 dark:border-zinc-800">
                     <span className="text-zinc-500 dark:text-zinc-400 font-medium">
-                        {parseInt(getTodayString().slice(5, 7))}월 {goal.cycle === 'WEEKLY' ? '주간' : '월간'} 현황
+                        {goal.cycle === 'WEEKLY' ? '이번 주' : goal.cycle === 'TOTAL' ? '전체 기간' : '이번 달'} 남은 횟수
                     </span>
                     <div className="text-right">
                       <div className="font-bold text-orange-600 dark:text-orange-400 text-lg">
-                         {calculatedProgress?.current_value ?? (goal.current_count || 0)}
+                         {calculatedProgress?.current_value ?? (goal.limit_value || goal.monthly_limit || 0)}
                          <span className="text-zinc-400 text-sm font-normal">
                             {' '}/ {goal.limit_value || goal.monthly_limit}{goal.unit}
                          </span>
                       </div>
                       <span className="text-xs text-zinc-500">
-                         ({Math.max(0, (goal.limit_value || goal.monthly_limit || 0) - (calculatedProgress?.current_value ?? (goal.current_count || 0)))}회 남음)
+                         ({calculatedProgress?.used_value ?? 0}{goal.unit} 사용)
                       </span>
                     </div>
                  </div>
@@ -218,9 +218,9 @@ export function GoalCard({ goal, period, isEditable, goalLogs, logDateMap }: Goa
                     <div className="flex gap-1 w-full">
                        {Array.from({ length: (goal.limit_value || goal.monthly_limit || 1) }).map((_, i) => {
                           const limit = goal.limit_value || goal.monthly_limit || 1;
-                          const current = calculatedProgress?.current_value ?? (goal.current_count || 0);
-                          const isFilled = i < current;
-                          const isExceeded = current > limit;
+                          const used = calculatedProgress?.used_value ?? 0;
+                          const isFilled = i < used;
+                          const isExceeded = used > limit;
 
                           return (
                              <div
@@ -241,11 +241,11 @@ export function GoalCard({ goal, period, isEditable, goalLogs, logDateMap }: Goa
                       <div
                         className={cn(
                           "h-full transition-all duration-700 rounded-full",
-                          (calculatedProgress?.current_value ?? (goal.current_count || 0)) > (goal.limit_value || goal.monthly_limit || 0)
+                          (calculatedProgress?.used_value ?? 0) > (goal.limit_value || goal.monthly_limit || 0)
                             ? "bg-gradient-to-r from-rose-400 to-rose-600"
                             : "bg-gradient-to-r from-orange-400 to-orange-600"
                         )}
-                        style={{ width: `${progress}%` }}
+                        style={{ width: `${Math.min(100, (goal.limit_value || goal.monthly_limit || 0) > 0 ? ((calculatedProgress?.used_value ?? 0) / (goal.limit_value || goal.monthly_limit || 1)) * 100 : 0)}%` }}
                       />
                     </div>
                   )}

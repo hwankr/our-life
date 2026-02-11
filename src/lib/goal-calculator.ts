@@ -196,90 +196,55 @@ export function calculateLimitProgress(
 ): GoalProgress {
   const cycle = goal.cycle || 'MONTHLY';
   const limitValue = goal.limit_value || goal.monthly_limit || 0;
-  const today = getTodayString();
-  
+
   if (cycle === 'TOTAL') {
-    // 전체 기간 제한
+    // 전체 기간 제한 - 카운트다운
     const totalUsage = goalLogs.reduce((sum, log) => sum + log.count, 0);
-    const isSuccess = totalUsage <= limitValue;
-    const progressPercent = isSuccess ? 100 : Math.max(0, (1 - (totalUsage - limitValue) / limitValue) * 100);
+    const remaining = Math.max(0, limitValue - totalUsage);
+    const progressPercent = limitValue > 0 ? (remaining / limitValue) * 100 : 0;
 
     return {
       goal_id: goal.id,
       type: 'LIMIT',
       progress_percent: Math.round(progressPercent * 10) / 10,
-      current_value: isSuccess ? 1 : 0,
-      target_value: 1,
+      current_value: remaining,
+      target_value: limitValue,
+      used_value: totalUsage,
     };
   }
-  
+
   if (cycle === 'WEEKLY') {
-    // 주간 제한
+    // 주간 제한 - 이번 주 카운트다운
     const weeklyUsage = calculateWeeklyUsage(goalLogs, logDateMap);
-    const weeks = getWeeksBetween(period.start_date, period.end_date);
     const currentWeekKey = getCurrentWeekKey();
-    
-    const weeklyStatus = weeks.map((weekStart) => {
-      const used = weeklyUsage.get(weekStart) || 0;
-      return {
-        week_start: weekStart,
-        used,
-        limit: limitValue,
-        is_success: used <= limitValue,
-      };
-    });
-
-    // 현재까지 완료된 주만 카운트
-    const completedWeeks = weeklyStatus.filter(
-      (w) => w.week_start <= currentWeekKey
-    );
-
-    const successCount = completedWeeks.filter((w) => w.is_success).length;
-    const progressPercent =
-      completedWeeks.length > 0 ? (successCount / completedWeeks.length) * 100 : 0;
+    const currentWeekUsage = weeklyUsage.get(currentWeekKey) || 0;
+    const remaining = Math.max(0, limitValue - currentWeekUsage);
+    const progressPercent = limitValue > 0 ? (remaining / limitValue) * 100 : 0;
 
     return {
       goal_id: goal.id,
       type: 'LIMIT',
       progress_percent: Math.round(progressPercent * 10) / 10,
-      current_value: successCount,
-      target_value: weeks.length,
+      current_value: remaining,
+      target_value: limitValue,
+      used_value: currentWeekUsage,
     };
   }
-  
-  // 월간 제한 (기존 로직)
+
+  // 월간 제한 - 이번 달 카운트다운
   const monthlyUsage = calculateMonthlyUsage(goalLogs, logDateMap);
-  const months = getMonthsBetween(period.start_date, period.end_date);
-
-  const monthlyStatus = months.map(({ year, month }) => {
-    const key = `${year}-${String(month).padStart(2, '0')}`;
-    const used = monthlyUsage.get(key) || 0;
-    return {
-      year,
-      month,
-      used,
-      limit: limitValue,
-      is_success: used <= limitValue,
-    };
-  });
-
-  // 현재 진행 중인 달까지만 카운트
-  const currentYearMonth = today.slice(0, 7);
-  const completedMonths = monthlyStatus.filter(
-    (m) => `${m.year}-${String(m.month).padStart(2, '0')}` <= currentYearMonth
-  );
-
-  const successCount = completedMonths.filter((m) => m.is_success).length;
-  const progressPercent =
-    completedMonths.length > 0 ? (successCount / completedMonths.length) * 100 : 0;
+  const currentMonthKey = getCurrentMonthKey();
+  const currentMonthUsage = monthlyUsage.get(currentMonthKey) || 0;
+  const remaining = Math.max(0, limitValue - currentMonthUsage);
+  const progressPercent = limitValue > 0 ? (remaining / limitValue) * 100 : 0;
 
   return {
     goal_id: goal.id,
     type: 'LIMIT',
     progress_percent: Math.round(progressPercent * 10) / 10,
-    current_value: successCount,
-    target_value: months.length,
-    monthly_status: monthlyStatus,
+    current_value: remaining,
+    target_value: limitValue,
+    used_value: currentMonthUsage,
   };
 }
 

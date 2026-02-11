@@ -102,6 +102,7 @@ export interface GoalProgress {
   progress_percent: number; // 0-100
   current_value: number;
   target_value: number;
+  used_value?: number; // LIMIT: actual usage in current period
   // LIMIT 전용
   monthly_status?: {
     year: number;
