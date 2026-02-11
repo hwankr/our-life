@@ -13,6 +13,7 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import { FadeIn, StaggerContainer, StaggerItem } from "@/components/ui/motion-layout";
 import { EditPeriodDialog } from "@/components/periods/EditPeriodDialog";
 import { PeriodCalendar } from "@/components/periods/PeriodCalendar";
+import { AttendanceStats } from "@/components/periods/AttendanceStats";
 import { CalendarDays, ArrowRight, ArrowLeft } from "lucide-react";
 import { Breadcrumb } from "@/components/breadcrumb";
 
@@ -193,6 +194,15 @@ export default async function PeriodPage({ params }: PeriodPageProps) {
              goals={goals || []}
              currentUserId={authUser.id}
            />
+        </FadeIn>
+
+        {/* 출석 현황 */}
+        <FadeIn delay={0.15}>
+          <AttendanceStats
+            period={period}
+            participants={participants || []}
+            dailyLogs={dailyLogs || []}
+          />
         </FadeIn>
 
         {/* 참여자 카드 목록 */}
