@@ -45,6 +45,7 @@ const PARTICIPANT_COLORS = [
   'bg-emerald-500',
   'bg-amber-500',
 ];
+const MAX_VISIBLE_LOG_MARKERS = PARTICIPANT_COLORS.length;
 
 export function PeriodCalendar({
   period,
@@ -123,15 +124,6 @@ export function PeriodCalendar({
     const logs = logsByDate[dateStr] || [];
     if (selectedFilter) {
       return logs.filter(l => l.userId === selectedFilter);
-    }
-    return logs;
-  };
-
-  // 날짜별 상세 데이터 가져오기
-  const getDateDetails = (dateStr: string) => {
-    const logs = dailyLogs.filter(l => l.log_date === dateStr);
-    if (selectedFilter) {
-      return logs.filter(l => l.user_id === selectedFilter);
     }
     return logs;
   };
@@ -231,7 +223,7 @@ export function PeriodCalendar({
       <div className="flex gap-4 text-xs text-zinc-500 dark:text-zinc-400 mb-4 flex-wrap">
         {participants
           .filter(p => !selectedFilter || p.id === selectedFilter)
-          .map((p, idx) => {
+          .map((p) => {
             const colorIdx = participants.findIndex(pp => pp.id === p.id);
             return (
               <div key={p.id} className="flex items-center gap-2">
@@ -268,6 +260,8 @@ export function PeriodCalendar({
           const isToday = dateStr === today;
           const inPeriod = isInPeriod(date);
           const logs = getFilteredLogs(dateStr);
+          const visibleLogs = logs.slice(0, MAX_VISIBLE_LOG_MARKERS);
+          const overflowCount = Math.max(logs.length - MAX_VISIBLE_LOG_MARKERS, 0);
           const dayOfWeek = date.getDay();
           const allLogged = inPeriod && isAllLogged(dateStr);
           const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
@@ -308,16 +302,21 @@ export function PeriodCalendar({
 
                     {/* 기록 표시 점 */}
                     {logs.length > 0 && (
-                      <div className="flex gap-0.5 flex-wrap justify-center">
-                        {logs.slice(0, 2).map((l, i) => {
+                      <div className="flex max-w-full flex-wrap items-center justify-center gap-0.5">
+                        {visibleLogs.map((l) => {
                           const participantIdx = participants.findIndex(p => p.id === l.userId);
                           return (
                             <span
-                              key={i}
-                              className={`w-2 h-2 sm:w-1.5 sm:h-1.5 rounded-full ${PARTICIPANT_COLORS[participantIdx % PARTICIPANT_COLORS.length]} shadow-sm`}
+                              key={l.log.id}
+                              className={`h-2 w-2 rounded-full sm:h-1.5 sm:w-1.5 ${PARTICIPANT_COLORS[participantIdx % PARTICIPANT_COLORS.length]} shadow-sm`}
                             />
                           );
                         })}
+                        {overflowCount > 0 && (
+                          <span className="rounded-full bg-zinc-200 px-1 py-px text-[8px] font-bold leading-none text-zinc-700 dark:bg-zinc-700 dark:text-zinc-100">
+                            +{overflowCount}
+                          </span>
+                        )}
                       </div>
                     )}
                   </button>
